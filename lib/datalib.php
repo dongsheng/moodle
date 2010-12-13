@@ -73,7 +73,7 @@ function get_admins() {
             WHERE ctx.contextlevel=10
               AND rc.capability IN ('moodle/site:config',
                                     'moodle/legacy:admin',
-                                    'moodle/site:doanything')       
+                                    'moodle/site:doanything')
             GROUP BY ra.userid
             HAVING SUM(rc.permission) > 0";
 
@@ -409,7 +409,7 @@ function get_courses($categoryid="all", $sort="c.sortorder ASC", $fields="c.*") 
                                     ctx.depth AS ctxdepth, ctx.contextlevel AS ctxlevel
                                     FROM {$CFG->prefix}course c
                                     JOIN {$CFG->prefix}context ctx
-                                      ON (c.id = ctx.instanceid 
+                                      ON (c.id = ctx.instanceid
                                           AND ctx.contextlevel=".CONTEXT_COURSE.")
                                     $categoryselect
                                     $sortstatement")) {
@@ -912,7 +912,7 @@ function get_my_courses($userid, $sort='visible DESC,sortorder ASC', $fields=NUL
                 if ($limit > 0 && $cc >= $limit) {
                     break;
                 }
-                
+
                 $courses[$c->id] = $c;
                 $cc++;
             }
@@ -1931,7 +1931,7 @@ function add_to_log($courseid, $module, $action, $url='', $info='', $cm=0, $user
 
     $info = empty($info) ? sql_empty() : $info; // Use proper empties for each database
     $url  = empty($url)  ? sql_empty() : $url;
-    $sql ='INSERT INTO '. $CFG->prefix .'log (time, userid, course, ip, module, cmid, action, url, info)
+    $sql ='INSERT INTO '. $CFG->prefix .'log_temp (time, userid, course, ip, module, cmid, action, url, info)
         VALUES (' . "'$timenow', '$userid', '$courseid', '$REMOTE_ADDR', '$module', '$cm', '$action', '$url', '$info')";
 
     $result = $db->Execute($sql);
