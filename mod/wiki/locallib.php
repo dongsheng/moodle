@@ -299,8 +299,12 @@ function wiki_refresh_page_links($page, $links) {
             $newlink->topageid = $linkinfo['pageid'];
         }
 
-        $DB->insert_record('wiki_links', $newlink);
-
+        try {
+            $DB->insert_record('wiki_links', $newlink);
+        } catch {
+            // tomissingpage field can go wrong if wiki parser failed to
+            // get the correct page title, so we ignore  the bad records
+        }
     }
 }
 
