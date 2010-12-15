@@ -51,6 +51,9 @@ if ($mform->is_cancelled()) {
     $newcategory = new stdClass();
     $newcategory->name = $data->name;
     $newcategory->description = $data->description;
+
+    require_capability('moodle/category:manage', get_category_or_system_context((int)$data->parent));
+
     $newcategory->parent = $data->parent; // if $data->parent = 0, the new category will be a top-level category
 
     if (isset($data->theme) && !empty($CFG->allowcategorythemes)) {
