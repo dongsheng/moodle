@@ -861,7 +861,17 @@ abstract class repository {
         }
         $fs = get_file_storage();
         if ($existingfile = $fs->get_file($context->id, $record->component, $record->filearea, $record->itemid, $record->filepath, $record->filename)) {
-            throw new moodle_exception('fileexists');
+            $draft_manager = new moodle_url("$CFG->wwwroot/repository/draftfiles_manager.php", array(
+                'action'=>'browse',
+                'env'=>'editor',
+                'itemid'=>$record->itemid,
+                'subdirs'=>false,
+                // not allowig add files
+                'maxfiles'=>0,
+                'ctx_id'=>$context->id,
+                'sesskey'=>sesskey(),
+                ));
+            throw new moodle_exception('fileexists', 'repository', '', $draft_manager->out());
         }
         if ($file = $fs->create_file_from_pathname($record, $thefile)) {
             if (empty($CFG->repository_no_delete)) {

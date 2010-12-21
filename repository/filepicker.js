@@ -203,8 +203,10 @@ M.core_filepicker.init = function(Y, options) {
             var header = M.str.moodle.info;
             if (type=='error') {
                 header = M.str.moodle.error;
+            } else {
+                header = type;
             }
-            this.msg_dlg.setHeader(type);
+            this.msg_dlg.setHeader(header);
             this.msg_dlg.show();
         },
         build_tree: function(node, level) {
@@ -994,6 +996,7 @@ M.core_filepicker.init = function(Y, options) {
             }, true);
         },
         create_upload_form: function(data) {
+            var scope = this;
             var client_id = this.options.client_id;
             Y.one('#panel-'+client_id).set('innerHTML', '');
             var types = this.options.accepted_types;
@@ -1041,7 +1044,6 @@ M.core_filepicker.init = function(Y, options) {
             str += '</div>';
             var upload_form = Y.Node.create(str);
             Y.one('#panel-'+client_id).appendChild(upload_form);
-            var scope = this;
             Y.one('#'+id+'_action').on('click', function(e) {
                 e.preventDefault();
                 var license = Y.one('#select-license-'+client_id).get('value');
@@ -1091,7 +1093,6 @@ M.core_filepicker.init = function(Y, options) {
             //if(this.active_repo.pages < 8){
                 this.print_paging('header');
             //}
-
 
             var toolbar = Y.one('#repo-tb-'+client_id);
 
@@ -1184,6 +1185,7 @@ M.core_filepicker.init = function(Y, options) {
                 }, this);
                 toolbar.appendChild(refresh);
             }
+
             if(!r.nologin) {
                 var label = r.logouttext?r.logouttext:M.str.repository.logout;
                 var html = '<a href="###"><img src="'+M.util.image_url('a/logout')+'" /> '+label+'</a>';

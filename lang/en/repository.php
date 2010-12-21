@@ -93,7 +93,7 @@ $string['erroruniquename'] = 'Repository instance name should be unique';
 $string['errorpostmaxsize'] = 'The uploaded file may exceed max_post_size directive in php.ini.';
 $string['existingrepository'] = 'This repository already exists';
 $string['federatedsearch'] = 'Federated search';
-$string['fileexists'] = 'File name already being used, please use another name';
+$string['fileexists'] = 'File name already being used, please use <a target="_blank" href="{$a}">draft manager</a> to delete or rename existing files';
 $string['filename'] = 'Filename';
 $string['filenotnull'] = 'You must select a file to upload.';
 $string['filesaved'] = 'The file has been saved';

@@ -191,7 +191,17 @@ class repository_local extends repository {
         $context = get_context_instance_by_id($contextid);
 
         if ($existingfile = $fs->get_file($user_context->id, 'user', 'draft', $draftitemid, $new_filepath, $new_filename)) {
-            throw new moodle_exception('fileexists');
+            $draft_manager = new moodle_url("$CFG->wwwroot/repository/draftfiles_manager.php", array(
+                'action'=>'browse',
+                'env'=>'editor',
+                'itemid'=>$draftitemid,
+                'subdirs'=>false,
+                // not allowig add files
+                'maxfiles'=>0,
+                'ctx_id'=>$user_context->id,
+                'sesskey'=>sesskey(),
+                ));
+            throw new moodle_exception('fileexists', 'repository', '', $draft_manager->out());
         }
 
         $file_info = $browser->get_file_info($context, $component, $filearea, $fileitemid, $filepath, $filename);
