@@ -66,6 +66,8 @@ function resourcelib_try_file_migration($filepath, $cmid, $courseid, $component,
         // do not steal protected files!
         return false;
     }
+    if (!$cmid) 
+        return false;
 
     if (!$context = get_context_instance(CONTEXT_MODULE, $cmid)) {
         return false;
