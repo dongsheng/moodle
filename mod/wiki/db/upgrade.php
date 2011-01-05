@@ -170,8 +170,8 @@ function xmldb_wiki_upgrade($oldversion) {
          *          the order by and it would be much faster.
          */
 
-        $sql = "INSERT into {wiki_pages} (subwikiid, title, cachedcontent, timecreated, timemodified, userid, pageviews)
-                    SELECT s.id, p.pagename, ?, p.created, p.lastmodified, p.userid, p.hits
+        //$sql = "INSERT into {wiki_pages} (subwikiid, title, cachedcontent, timecreated, timemodified, userid, pageviews)";
+        $sql = "SELECT s.id, p.pagename, p.created, p.lastmodified, p.userid, p.hits
                     FROM {wiki_pages_old} p
                     LEFT OUTER JOIN {wiki_entries_old} e ON e.id = p.wiki
                     LEFT OUTER JOIN {wiki_subwikis} s
@@ -182,9 +182,27 @@ function xmldb_wiki_upgrade($oldversion) {
                         WHERE p.pagename = po.pagename and
                         p.wiki = po.wiki
                     )";
+        $records = $DB->get_recordset_sql($sql);
         echo $OUTPUT->notification('Migrating old pages to new pages', 'notifysuccess');
-
-        $DB->execute($sql, array('**reparse needed**'));
+        foreach ($records as $record) {
+            $page = new stdclass();
+            $page->subwikiid     = $record->id;
+            $page->title         = $record->pagename;
+            $page->cachedcontent = '**reparse needed**';
+            $page->timecreated   = $record->created;
+            $page->timemodified  = $record->lastmodified;
+            $page->userid        = $record->userid;
+            $page->pageviews     = $record->hits;
+            try {
+                $DB->record_exists('wiki_pages', array('subwikiid'=>$record->id, 'userid'=>$record->userid, 'title'=>$record->title));
+            } catch (Exception $e) {
+                continue;
+            }
+            echo $OUTPUT->notification('inserting', 'notifysuccess');
+            $DB->insert_record('wiki_pages', $page);
+        }
+        $records->close();
+        //$DB->execute($sql, array('**reparse needed**'));
 
         upgrade_mod_savepoint(true, 2010040105, 'wiki');
     }
