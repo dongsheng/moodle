@@ -170,7 +170,6 @@ function xmldb_wiki_upgrade($oldversion) {
          *          the order by and it would be much faster.
          */
 
-        //$sql = "INSERT into {wiki_pages} (subwikiid, title, cachedcontent, timecreated, timemodified, userid, pageviews)";
         $sql = "SELECT s.id, p.pagename, p.created, p.lastmodified, p.userid, p.hits
                     FROM {wiki_pages_old} p
                     LEFT OUTER JOIN {wiki_entries_old} e ON e.id = p.wiki
@@ -194,15 +193,15 @@ function xmldb_wiki_upgrade($oldversion) {
             $page->userid        = $record->userid;
             $page->pageviews     = $record->hits;
             try {
-                $DB->record_exists('wiki_pages', array('subwikiid'=>$record->id, 'userid'=>$record->userid, 'title'=>$record->title));
+                if (!$DB->record_exists('wiki_pages', array('subwikiid'=>$record->id, 'userid'=>$record->userid, 'title'=>$record->pagename))) {
+                    echo $OUTPUT->notification('inserting', 'notifysuccess');
+                    $DB->insert_record('wiki_pages', $page);
+                }
             } catch (Exception $e) {
                 continue;
             }
-            echo $OUTPUT->notification('inserting', 'notifysuccess');
-            $DB->insert_record('wiki_pages', $page);
         }
         $records->close();
-        //$DB->execute($sql, array('**reparse needed**'));
 
         upgrade_mod_savepoint(true, 2010040105, 'wiki');
     }
