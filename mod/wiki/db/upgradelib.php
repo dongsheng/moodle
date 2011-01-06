@@ -206,23 +206,22 @@ function wiki_upgrade_migrate_versions() {
     // need to move the binary data in db
     $fs = get_file_storage();
     // select all wiki pages history
-    $sql = "SELECT po.id as oldpage_id, po.pagename as oldpage_pagename, po.version, po.flags, po.content, po.author, po.userid as oldpage_userid, po.created, po.lastmodified, po.refs, po.meta, po.hits, po.wiki,
-                p.id as newpage_id, p.subwikiid, p.title, p.cachedcontent, p.timecreated, p.timemodified as newpage_timemodified, p.timerendered, p.userid as newpage_userid, p.pageviews, p.readonly,
-                e.id as entry_id, e.wikiid, e.course as entrycourse, e.groupid, e.userid as entry_userid, e.pagename as entry_pagename, e.timemodified as entry_timemodified,
-                w.id as wiki_id, w.course as wiki_course, w.name, w.summary as summary, w.pagename as wiki_pagename, w.wtype, w.ewikiprinttitle, w.htmlmode, w.ewikiacceptbinary, w.disablecamelcase, w.setpageflags, w.strippages, w.removepages, w.revertchanges, w.initialcontent, w.timemodified as wiki_timemodified,
-                cm.id AS cmid
-                FROM {wiki_pages_old} po LEFT OUTER JOIN {wiki_entries_old} e
-                ON e.id = po.wiki
-                LEFT OUTER JOIN {wiki} w
-                ON w.id = e.wikiid
-                LEFT OUTER JOIN {wiki_subwikis} s
-                ON e.groupid = s.groupid AND e.wikiid = s.wikiid AND e.userid = s.userid
-                LEFT OUTER JOIN {wiki_pages} p
-                ON po.pagename = p.title AND p.subwikiid = s.id
-                JOIN {modules} m ON m.name = 'wiki'
-                JOIN {course_modules} cm
-                ON (cm.module = m.id AND cm.instance = w.id)
-                ";
+    $sql = "SELECT po.id AS oldpage_id, po.pagename AS oldpage_pagename, po.version, po.flags,
+                   po.content, po.author, po.userid AS oldpage_userid, po.created, po.lastmodified, po.refs, po.meta, po.hits, po.wiki,
+                   p.id AS newpage_id, p.subwikiid, p.title, p.cachedcontent, p.timecreated, p.timemodified AS newpage_timemodified,
+                   p.timerendered, p.userid AS newpage_userid, p.pageviews, p.readonly, e.id AS entry_id, e.wikiid, e.course AS entrycourse,
+                   e.groupid, e.userid AS entry_userid, e.pagename AS entry_pagename, e.timemodified AS entry_timemodified,
+                   w.id AS wiki_id, w.course AS wiki_course, w.name, w.summary AS summary, w.pagename AS wiki_pagename, w.wtype,
+                   w.ewikiprinttitle, w.htmlmode, w.ewikiacceptbinary, w.disablecamelcase, w.setpageflags, w.strippages, w.removepages,
+                   w.revertchanges, w.initialcontent, w.timemodified AS wiki_timemodified,
+                   cm.id AS cmid
+              FROM {wiki_pages_old} po
+              LEFT OUTER JOIN {wiki_entries_old} e ON e.id = po.wiki
+              LEFT OUTER JOIN {wiki} w ON w.id = e.wikiid
+              LEFT OUTER JOIN {wiki_subwikis} s ON e.groupid = s.groupid AND e.wikiid = s.wikiid AND e.userid = s.userid
+              LEFT OUTER JOIN {wiki_pages} p ON po.pagename = p.title AND p.subwikiid = s.id
+              JOIN {modules} m ON m.name = 'wiki'
+              JOIN {course_modules} cm ON (cm.module = m.id AND cm.instance = w.id)";
 
     $pagesinfo = $DB->get_recordset_sql($sql, array());
 
@@ -232,18 +231,19 @@ function wiki_upgrade_migrate_versions() {
         $mimetype = ewiki_mime_magic($pageinfo->content);
         if (!empty($mimetype)) {
             $context = get_context_instance(CONTEXT_MODULE, $pageinfo->cmid);
+            $filename = clean_param($pageinfo->oldpage_pagename, PARAM_FILE);
             $filerecord = array('contextid' => $context->id,
                                 'component' => 'mod_wiki',
                                 'filearea'  => 'attachments',
                                 'itemid'    => $pageinfo->subwikiid,
                                 'filepath'  => '/',
-                                'filename'  => $pageinfo->oldpage_pagename,
+                                'filename'  => $filename,
                                 'userid'    => $pageinfo->oldpage_userid);
             if (!$fs->file_exists($context->id, 'mod_wiki', 'attachments', $pageinfo->subwikiid, '/', $pageinfo->pagename)) {
                 $storedfile = $fs->create_file_from_string($filerecord, $pageinfo->content);
             }
 
-            $pageinfo->content = "<a href='@@PLUGINFILE@@/$pageinfo->pagename'>$pageinfo->pagename</a>";
+            $pageinfo->content = "<a href='@@PLUGINFILE@@/$filename'>$pageinfo->oldpage_pagename</a>";
         }
 
         $oldpage = new StdClass();

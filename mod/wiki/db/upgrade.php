@@ -194,7 +194,6 @@ function xmldb_wiki_upgrade($oldversion) {
             $page->pageviews     = $record->hits;
             try {
                 if (!$DB->record_exists('wiki_pages', array('subwikiid'=>$record->id, 'userid'=>$record->userid, 'title'=>$record->pagename))) {
-                    echo $OUTPUT->notification('inserting', 'notifysuccess');
                     $DB->insert_record('wiki_pages', $page);
                 }
             } catch (Exception $e) {
