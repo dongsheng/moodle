@@ -1,4 +1,12 @@
 <?php
+/**
+ * convert ewiki format text to html format
+ *
+ * @param object $oldentry wiki entry object
+ * @param object $oldpage wiki page object
+ * @param object $oldwiki wiki instance object
+ * @return string html format wiki content
+ */
 function wiki_ewiki_2_html($oldentry, $oldpage, $oldwiki) {
     global $CFG, $wiki_entry, $moodle_disable_camel_case, $ewiki_plugins, $ewiki_config, $moodle_format;
 
@@ -49,7 +57,6 @@ function wiki_ewiki_2_html($oldentry, $oldpage, $oldwiki) {
     $content = ewiki_format($oldpage->content);
 
     return $content;
-
 }
 
 function wiki_set_define($key, $value) {

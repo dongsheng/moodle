@@ -36,36 +36,6 @@
  *
  */
 
-/**
- *
- * TODO LIST:
- *
- * 1. Add needed fields to wiki table. DONE
- * 2. Rename other wiki tables. DONE
- * 3. Create new wiki tables. DONE BUT NOT FINISHED, WATING FOR NEW TABLES
- * 4. Move/Adapt/Transform configurations info to new structure
- * 5. Migrate wiki entries to subwikis. DONE
- * 6. Fill pages table with latest versions of every page. DONE
- * 7. Migrate page history to new table (transforming formats). DONE, BUT STILL WORKING
- * 8. Fill links table
- * 9. Drop useless information
- *
- * ADITIONAL THINGS AFTER CHAT WITH ELOY:
- *
- * 1. addField is deprecated. DONE
- * 2. Fix SQL error at block 3. DONE
- * 3. Merge set_field_select with previous update sentence. DONE
- * 4. Don't insert id fields on database (it won't work on mssql, oracle, pg). DONE.
- * 5. Use upgrade_set_timeout function.
- * 6. Use grafic of progess
- *
- * OTHER THINGS:
- *
- * 1. Use recordset instead of record when migrating historic
- * 2. Select only usefull data on block 06
- *
- */
-
 function xmldb_wiki_upgrade($oldversion) {
     global $CFG, $DB, $OUTPUT;
 
@@ -149,9 +119,9 @@ function xmldb_wiki_upgrade($oldversion) {
         /**
          * Migrating wiki entries to new subwikis
          */
-        $sql = "INSERT into {wiki_subwikis} (wikiid, groupid, userid)
-                    SELECT DISTINCT e.wikiid, e.groupid, e.userid
-                    FROM {wiki_entries_old} e";
+        $sql = "INSERT INTO {wiki_subwikis} (wikiid, groupid, userid)
+                SELECT DISTINCT e.wikiid, e.groupid, e.userid
+                  FROM {wiki_entries_old} e";
         echo $OUTPUT->notification('Migrating old entries to new subwikis', 'notifysuccess');
 
         $DB->execute($sql, array());
@@ -161,15 +131,8 @@ function xmldb_wiki_upgrade($oldversion) {
 
     // Step 5: Migrating pages
     if ($oldversion < 2010040105) {
-        /**
-         * Filling pages table with latest versions of every page.
-         *
-         * @TODO:   Ensure that ALL versions of every page are always in database and
-         *          they can be removed or cleaned.
-         *          That fact could let us rewrite the subselect to execute a count(*) to avoid
-         *          the order by and it would be much faster.
-         */
 
+        // select all wiki pages
         $sql = "SELECT s.id, p.pagename, p.created, p.lastmodified, p.userid, p.hits
                     FROM {wiki_pages_old} p
                     LEFT OUTER JOIN {wiki_entries_old} e ON e.id = p.wiki
@@ -181,8 +144,9 @@ function xmldb_wiki_upgrade($oldversion) {
                         WHERE p.pagename = po.pagename and
                         p.wiki = po.wiki
                     )";
-        $records = $DB->get_recordset_sql($sql);
         echo $OUTPUT->notification('Migrating old pages to new pages', 'notifysuccess');
+
+        $records = $DB->get_recordset_sql($sql);
         foreach ($records as $record) {
             $page = new stdclass();
             $page->subwikiid     = $record->id;
@@ -193,10 +157,13 @@ function xmldb_wiki_upgrade($oldversion) {
             $page->userid        = $record->userid;
             $page->pageviews     = $record->hits;
             try {
+                // make sure there is no duplicated records exist
                 if (!$DB->record_exists('wiki_pages', array('subwikiid'=>$record->id, 'userid'=>$record->userid, 'title'=>$record->pagename))) {
                     $DB->insert_record('wiki_pages', $page);
                 }
-            } catch (Exception $e) {
+            } catch (dml_exception $e) {
+                // catch possible insert exception
+                debugging($e->getMessage());
                 continue;
             }
         }

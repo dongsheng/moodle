@@ -230,7 +230,9 @@ function wiki_upgrade_migrate_versions() {
 
         $mimetype = ewiki_mime_magic($pageinfo->content);
         if (!empty($mimetype)) {
+            // if mimetype is not empty, means this is a file stored in db
             $context = get_context_instance(CONTEXT_MODULE, $pageinfo->cmid);
+            // clean up file name
             $filename = clean_param($pageinfo->oldpage_pagename, PARAM_FILE);
             $filerecord = array('contextid' => $context->id,
                                 'component' => 'mod_wiki',
@@ -243,6 +245,7 @@ function wiki_upgrade_migrate_versions() {
                 $storedfile = $fs->create_file_from_string($filerecord, $pageinfo->content);
             }
 
+            // replace page content to a link point to the file
             $pageinfo->content = "<a href='@@PLUGINFILE@@/$filename'>$pageinfo->oldpage_pagename</a>";
         }
 
@@ -302,8 +305,9 @@ function wiki_upgrade_migrate_versions() {
 
         $version = new StdClass();
         $version->pageid = $page->id;
+        // convert wiki content to html format
         $version->content = wiki_ewiki_2_html($entry, $oldpage, $wiki);
-        $version->contentformat = "html";
+        $version->contentformat = 'html';
         $version->version = $oldpage->version;
         $version->timecreated = $oldpage->lastmodified;
         $version->userid = $oldpage->userid;
@@ -318,16 +322,14 @@ function wiki_upgrade_migrate_versions() {
                 $version->version = 1;
                 $version->content = $content;
                 $DB->insert_record('wiki_versions', $version);
-            } catch (Exception $e) {
-                echo $OUTPUT->notification('Cannot insert this record, page id: ' . $page->id);
-                echo $e->getMessage();
+            } catch (dml_exception $e) {
+                debugging($e->getMessage());
             }
         } else {
             try {
                 $DB->insert_record('wiki_versions', $version);
-            } catch (Exception $e) {
-                echo $OUTPUT->notification('Cannot insert this record, page id: ' . $page->id);
-                echo $e->getMessage();
+            } catch (dml_exception $e) {
+                debugging($e->getMessage());
             }
         }
     }
