@@ -278,22 +278,6 @@ function xmldb_wiki_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2010040109, 'wiki');
     }
 
-    // TODO: Will hold the old tables so we will have chance to fix problems
-    // Will remove old tables once migrating 100% stable
-    // Step 10: delete old tables
-    if ($oldversion < 2010040120) {
-        //$tables = array('wiki_pages', 'wiki_locks', 'wiki_entries');
-
-        //foreach ($tables as $tablename) {
-            //$table = new xmldb_table($tablename . '_old');
-            //if ($dbman->table_exists($table)) {
-                //$dbman->drop_table($table);
-            //}
-        //}
-        //echo $OUTPUT->notification('Droping old tables', 'notifysuccess');
-        //upgrade_mod_savepoint(true, 2010040120, 'wiki');
-    }
-
     if ($oldversion < 2010080201) {
 
         $sql = "UPDATE {comments}
@@ -342,6 +326,22 @@ function xmldb_wiki_upgrade($oldversion) {
 
         upgrade_mod_savepoint(true, 2010102800, 'wiki');
     }
+
+    // TODO: Will hold the old tables so we will have chance to fix problems
+    // Will remove old tables once migrating 100% stable
+    // Step 10: delete old tables
+    //if ($oldversion < 2011000000) {
+        //$tables = array('wiki_pages', 'wiki_locks', 'wiki_entries');
+
+        //foreach ($tables as $tablename) {
+            //$table = new xmldb_table($tablename . '_old');
+            //if ($dbman->table_exists($table)) {
+                //$dbman->drop_table($table);
+            //}
+        //}
+        //echo $OUTPUT->notification('Droping old tables', 'notifysuccess');
+        //upgrade_mod_savepoint(true, 2011000000, 'wiki');
+    //}
 
     return true;
 }
