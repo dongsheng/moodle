@@ -42,7 +42,7 @@ $pageid = optional_param('pageid', 0, PARAM_INT); // Page ID
 
 $wid = optional_param('wid', 0, PARAM_INT); // Wiki ID
 $title = optional_param('title', '', PARAM_TEXT); // Page Title
-$currentgroup = optional_param('group', 0, PARAM_INT); // Group ID
+$currentgroup = optional_param('group', null, PARAM_INT); // Group ID
 $userid = optional_param('uid', 0, PARAM_INT); // User ID
 $groupanduser = optional_param('groupanduser', 0, PARAM_TEXT);
 
@@ -169,7 +169,8 @@ if ($id) {
     }
 
     $groupmode = groups_get_activity_groupmode($cm);
-    if (empty($currentgroup)) {
+    // if currentgroup parameter is not set, it will be null
+    if ($currentgroup === null) {
         $currentgroup = groups_get_activity_group($cm);
         $currentgroup = !empty($currentgroup) ? $currentgroup : 0;
     }
