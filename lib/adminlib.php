@@ -752,6 +752,9 @@ class admin_category implements parentable_part_of_admin_tree {
     /** @var mixed Either a string or an array or strings */
     public $visiblepath;
 
+    /**
+     * @var array A cache of previously-found child objects
+     */
     protected $child_locate = array();
 
     /**
@@ -766,6 +769,14 @@ class admin_category implements parentable_part_of_admin_tree {
         $this->name        = $name;
         $this->visiblename = $visiblename;
         $this->hidden      = $hidden;
+    }
+
+    /**
+     * Invalidate the cached child objects.
+     */
+    protected function purge_cache() {
+        $this->child_locate = array();
+        unset($this->child_locate);
     }
 
     /**
@@ -964,6 +975,7 @@ class admin_root extends admin_category {
      * @param bool $requirefulltree
      */
     public function purge_children($requirefulltree) {
+        $this->purge_cache();
         $this->children = array();
         $this->fulltree = ($requirefulltree || $this->fulltree);
         $this->loaded   = false;
