@@ -752,6 +752,8 @@ class admin_category implements parentable_part_of_admin_tree {
     /** @var mixed Either a string or an array or strings */
     public $visiblepath;
 
+    protected $child_locate = array();
+
     /**
      * Constructor for an empty admin category
      *
@@ -784,9 +786,13 @@ class admin_category implements parentable_part_of_admin_tree {
         }
 
         $return = NULL;
-        foreach($this->children as $childid=>$unused) {
-            if ($return = $this->children[$childid]->locate($name, $findpath)) {
-                break;
+        if (isset($this->child_locate[$name])) {
+            return $this->child_locate[$name];
+        } else {
+            foreach($this->children as $childid=>$unused) {
+                if ($return = $this->children[$childid]->locate($name, $findpath)) {
+                    break;
+                }
             }
         }
 
@@ -794,6 +800,8 @@ class admin_category implements parentable_part_of_admin_tree {
             $return->visiblepath[] = $this->visiblename;
             $return->path[]        = $this->name;
         }
+
+        $this->child_locate[$name] = $return;
 
         return $return;
     }
@@ -1031,10 +1039,9 @@ class admin_externalpage implements part_of_admin_tree {
                 $this->path        = array($this->name);
             }
             return $this;
-        } else {
-            $return = NULL;
-            return $return;
         }
+
+        return NULL;
     }
 
     /**
@@ -1172,10 +1179,9 @@ class admin_settingpage implements part_of_admin_tree {
                 $this->path        = array($this->name);
             }
             return $this;
-        } else {
-            $return = NULL;
-            return $return;
         }
+
+        return NULL;
     }
 
     /**

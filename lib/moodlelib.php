@@ -5671,8 +5671,15 @@ class core_string_manager implements string_manager {
      */
     public function load_component_strings($component, $lang, $disablecache=false, $disablelocal=false) {
         global $CFG;
+        static $componentcache = array();
 
-        list($plugintype, $pluginname) = normalize_component($component);
+        if (isset($componentcache[$component])) {
+            list($plugintype, $pluginname) = $componentcache[$component];
+        } else {
+            list($plugintype, $pluginname) = normalize_component($component);
+            $componentcache[$component] = array($plugintype, $pluginname);
+        }
+
         if ($plugintype == 'core' and is_null($pluginname)) {
             $component = 'core';
         } else {
@@ -5814,6 +5821,8 @@ class core_string_manager implements string_manager {
      */
     public function get_string($identifier, $component = '', $a = NULL, $lang = NULL) {
         $this->countgetstring++;
+
+        static $stringcache = array();
         // there are very many uses of these time formating strings without the 'langconfig' component,
         // it would not be reasonable to expect that all of them would be converted during 2.0 migration
         static $langconfigstrs = array(
@@ -5843,7 +5852,12 @@ class core_string_manager implements string_manager {
             $lang = current_language();
         }
 
-        $string = $this->load_component_strings($component, $lang);
+        if (isset($stringcache[$component][$lang])) {
+            $string = $stringcache[$component][$lang];
+        } else {
+            $string = $this->load_component_strings($component, $lang);
+            $stringcache[$component][$lang] = $string;
+        }
 
         if (!isset($string[$identifier])) {
             if ($component === 'pix' or $component === 'core_pix') {
@@ -6880,7 +6894,10 @@ function normalize_component($component) {
         $plugin = NULL;
 
     } else if (strpos($component, '_') === false) {
-        $subsystems = get_core_subsystems();
+        static $subsystems;
+        if (empty($subsystems)) {
+            $subsystems = get_core_subsystems();
+        }
         if (array_key_exists($component, $subsystems)) {
             $type   = 'core';
             $plugin = $component;

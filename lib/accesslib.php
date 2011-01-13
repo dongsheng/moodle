@@ -543,6 +543,7 @@ function get_guest_role() {
  */
 function has_capability($capability, $context, $user = null, $doanything = true) {
     global $USER, $CFG, $DB, $SCRIPT, $ACCESSLIB_PRIVATE;
+    static $capabilities_cache = array();
 
     if (during_initial_install()) {
         if ($SCRIPT === "/$CFG->admin/index.php" or $SCRIPT === "/$CFG->admin/cliupgrade.php") {
@@ -574,6 +575,10 @@ function has_capability($capability, $context, $user = null, $doanything = true)
         $userid = !empty($user->id) ? $user->id : $user;
     }
 
+    $md5key = md5($capability . $context->id);
+    if (isset($capabilities_cache[$userid][$md5key])) {
+        return $capabilities_cache[$userid][$md5key];
+    }
     // capability must exist
     if (!$capinfo = get_capability_info($capability)) {
         debugging('Capability "'.$capability.'" was not found! This should be fixed in code.');
@@ -687,7 +692,8 @@ function has_capability($capability, $context, $user = null, $doanything = true)
         //
         if ($context->contextlevel <= CONTEXT_COURSE) {
             // Course and above are always preloaded
-            return has_capability_in_accessdata($capability, $context, $USER->access);
+            $capabilities_cache[$userid][$md5key] = has_capability_in_accessdata($capability, $context, $USER->access);
+            return $capabilities_cache[$userid][$md5key];
         }
         // Load accessdata for below-the-course contexts
         if (!path_inaccessdata($context->path,$USER->access)) {
@@ -696,7 +702,8 @@ function has_capability($capability, $context, $user = null, $doanything = true)
             // error_log("bt {$bt[0]['file']} {$bt[0]['line']}");
             load_subcontext($USER->id, $context, $USER->access);
         }
-        return has_capability_in_accessdata($capability, $context, $USER->access);
+        $capabilities_cache[$userid][$md5key] = has_capability_in_accessdata($capability, $context, $USER->access);
+        return $capabilities_cache[$userid][$md5key];
     }
 
     if (!isset($ACCESSLIB_PRIVATE->accessdatabyuser[$userid])) {
@@ -705,7 +712,8 @@ function has_capability($capability, $context, $user = null, $doanything = true)
 
     if ($context->contextlevel <= CONTEXT_COURSE) {
         // Course and above are always preloaded
-        return has_capability_in_accessdata($capability, $context, $ACCESSLIB_PRIVATE->accessdatabyuser[$userid]);
+        $capabilities_cache[$userid][$md5key] = has_capability_in_accessdata($capability, $context, $ACCESSLIB_PRIVATE->accessdatabyuser[$userid]);
+        return $capabilities_cache[$userid][$md5key];
     }
     // Load accessdata for below-the-course contexts as needed
     if (!path_inaccessdata($context->path, $ACCESSLIB_PRIVATE->accessdatabyuser[$userid])) {
@@ -714,7 +722,8 @@ function has_capability($capability, $context, $user = null, $doanything = true)
         // error_log("bt {$bt[0]['file']} {$bt[0]['line']}");
         load_subcontext($userid, $context, $ACCESSLIB_PRIVATE->accessdatabyuser[$userid]);
     }
-    return has_capability_in_accessdata($capability, $context, $ACCESSLIB_PRIVATE->accessdatabyuser[$userid]);
+    $capabilities_cache[$userid][$md5key] = has_capability_in_accessdata($capability, $context, $ACCESSLIB_PRIVATE->accessdatabyuser[$userid]);
+    return $capabilities_cache[$userid][$md5key];
 }
 
 /**
