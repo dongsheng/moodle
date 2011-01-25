@@ -422,8 +422,23 @@ abstract class user_selector_base {
 
         // If we have a $search string, put a field LIKE '$search%' condition on each field.
         if ($search) {
+            // Construct SQL fullname from lang defination
+            $nameordercheck = new stdClass();
+            $nameordercheck->firstname = 'a';
+            $nameordercheck->lastname  = 'b';
+            $ordered_fullname = fullname($nameordercheck);
+            if ($ordered_fullname == 'b a' ) {
+                $sql = $DB->sql_fullname($u . 'lastname', $u . 'firstname');
+            } else if ($ordered_fullname == 'a b' ) {
+                $sql = $DB->sql_fullname($u . 'firstname', $u . 'lastname');
+            } else if ($ordered_fullname == 'ba' ) {  // zh-cn and zh-tw use this style fullname
+                $sql = $DB->sql_concat($u . 'lastname', $u . 'firstname');
+            } else {
+                $sql = $DB->sql_concat($u . 'firstname', $u . 'lastname');
+            }
+
             $conditions = array(
-                $DB->sql_fullname($u . 'firstname', $u . 'lastname'),
+                $sql,
                 $conditions[] = $u . 'lastname'
             );
             foreach ($this->extrafields as $field) {
