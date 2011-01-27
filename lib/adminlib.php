@@ -739,7 +739,7 @@ interface parentable_part_of_admin_tree extends part_of_admin_tree {
  */
 class admin_category implements parentable_part_of_admin_tree {
 
-/** @var mixed An array of part_of_admin_tree objects that are this object's children */
+    /** @var mixed An array of part_of_admin_tree objects that are this object's children */
     public $children;
     /** @var string An internal name for this category. Must be unique amongst ALL part_of_admin_tree objects */
     public $name;
@@ -751,6 +751,16 @@ class admin_category implements parentable_part_of_admin_tree {
     public $path;
     /** @var mixed Either a string or an array or strings */
     public $visiblepath;
+    /**
+     * An array containing references to all created categories stored by there name.
+     * If multiple categories have the same name then true is stored instead of
+     * a reference.
+     * This helps reduce the number of locate calls when building the admin tree
+     * from > 3000 to < 500 and also improves performance.
+     * @static
+     * @var array
+     */
+    protected static $categories = array();
 
     /**
      * Constructor for an empty admin category
@@ -764,6 +774,16 @@ class admin_category implements parentable_part_of_admin_tree {
         $this->name        = $name;
         $this->visiblename = $visiblename;
         $this->hidden      = $hidden;
+
+        if (array_key_exists($name, self::$categories)) {
+            // There are multiple categories with the same name, we should never
+            // encounter this as names are meant to be unique, however if we DO
+            // happen to get here we don't want to just cache the last one.
+            self::$categories[$name] = true;
+        } else {
+            // Cache this category
+            self::$categories[$name] = $this;
+        }
     }
 
     /**
@@ -774,7 +794,14 @@ class admin_category implements parentable_part_of_admin_tree {
      * @return mixed A reference to the object with internal name $name if found, otherwise a reference to NULL.
      *                  defaults to false
      */
-    public function locate($name, $findpath=false) {
+    public function locate($name, $findpath=false, $usecache = true) {
+        // If caching is enabled (default) AND the category name is cached AND
+        // the category isn't true (multiple categories with that name) then return
+        // the cached object.
+        if ($usecache && array_key_exists($name, self::$categories) && self::$categories[$name] !== true) {
+            return self::$categories[$name];
+        }
+
         if ($this->name == $name) {
             if ($findpath) {
                 $this->visiblepath[] = $this->visiblename;
@@ -831,7 +858,10 @@ class admin_category implements parentable_part_of_admin_tree {
 
         foreach($this->children as $precedence => $child) {
             if ($child->name == $name) {
-            // found it!
+                // Found it!
+                // remove it from the static cache
+                unset(self::$categories[$name]);
+                // then remove it from the childrens array
                 unset($this->children[$precedence]);
                 return true;
             }
