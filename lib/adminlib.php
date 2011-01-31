@@ -752,7 +752,7 @@ class admin_category implements parentable_part_of_admin_tree {
     /** @var mixed Either a string or an array or strings */
     public $visiblepath;
     /**
-     * An array containing references to all created categories stored by there name.
+     * An array containing references to all created categories stored by their name.
      * If multiple categories have the same name then true is stored instead of
      * a reference.
      * This helps reduce the number of locate calls when building the admin tree
@@ -791,6 +791,9 @@ class admin_category implements parentable_part_of_admin_tree {
      *
      * @param string $name The internal name of the object we want.
      * @param bool $findpath initialize path and visiblepath arrays
+     * @param bool $usecache If set to true then the static categories array will
+     *                        be checked to see if it has a named reference to the
+     *                        object before we start recursivily checking objects.
      * @return mixed A reference to the object with internal name $name if found, otherwise a reference to NULL.
      *                  defaults to false
      */
@@ -812,7 +815,7 @@ class admin_category implements parentable_part_of_admin_tree {
 
         $return = NULL;
         foreach($this->children as $childid=>$unused) {
-            if ($return = $this->children[$childid]->locate($name, $findpath)) {
+            if ($return = $this->children[$childid]->locate($name, $findpath, $usecache)) {
                 break;
             }
         }
