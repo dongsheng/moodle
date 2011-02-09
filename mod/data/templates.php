@@ -29,7 +29,8 @@ require_once('lib.php');
 $id    = optional_param('id', 0, PARAM_INT);  // course module id
 $d     = optional_param('d', 0, PARAM_INT);   // database id
 $mode  = optional_param('mode', 'singletemplate', PARAM_ALPHA);
-$disableeditor  = optional_param('switcheditor', false, PARAM_ALPHA);
+$disableeditor = optional_param('switcheditor', false, PARAM_RAW);
+$enableeditor = optional_param('useeditor', false, PARAM_RAW);
 
 $url = new moodle_url('/mod/data/templates.php');
 if ($mode !== 'singletemplate') {
@@ -130,10 +131,13 @@ if (($mytemplate = data_submitted()) && confirm_sesskey()) {
 
         // Check for multiple tags, only need to check for add template.
         if ($mode != 'addtemplate' or data_tags_check($data->id, $newtemplate->{$mode})) {
-            $DB->update_record('data', $newtemplate);
-            echo $OUTPUT->notification(get_string('templatesaved', 'data'), 'notifysuccess');
+            // if disableeditor or enableeditor buttons click, don't save instance
+            if (empty($disableeditor) && empty($enableeditor)) {
+                $DB->update_record('data', $newtemplate);
+                echo $OUTPUT->notification(get_string('templatesaved', 'data'), 'notifysuccess');
+                add_to_log($course->id, 'data', 'templates saved', "templates.php?id=$cm->id&amp;d=$data->id", $data->id, $cm->id);
+            }
         }
-        add_to_log($course->id, 'data', 'templates saved', "templates.php?id=$cm->id&amp;d=$data->id", $data->id, $cm->id);
     }
 } else {
     echo '<div class="littleintro" style="text-align:center">'.get_string('header'.$mode,'data').'</div>';
@@ -197,7 +201,14 @@ if ($mode == 'listtemplate'){
 
     $field = 'listtemplateheader';
     $editor->use_editor($field, $options);
-    echo '<div><textarea id="'.$field.'" name="'.$field.'" rows="15" cols="80">'.s($data->listtemplateheader).'</textarea></div>';
+    $listtemplateheader = '';
+    if (empty($disableeditor) && empty($enableeditor)) {
+        $listtemplateheader = $data->listtemplateheader;
+    } else {
+        // display the unsaved content
+        $listtemplateheader = $mytemplate->listtemplateheader;
+    }
+    echo '<div><textarea id="'.$field.'" name="'.$field.'" rows="15" cols="80">'.s($listtemplateheader).'</textarea></div>';
 
     echo '</td>';
     echo '</tr>';
@@ -292,7 +303,15 @@ if ($mode == 'listtemplate'){
 
 $field = 'template';
 $editor->use_editor($field, $options);
-echo '<div><textarea id="'.$field.'" name="'.$field.'" rows="15" cols="80">'.s($data->{$mode}).'</textarea></div>';
+$templatecontent = '';
+
+if ((empty($disableeditor) && empty($enableeditor)) or $mode === 'csstemplate' or $mode === 'jstemplate') {
+    $templatecontent = $data->{$mode};
+} else {
+    // display the unsaved content
+    $templatecontent = $mytemplate->template;
+}
+echo '<div><textarea id="'.$field.'" name="'.$field.'" rows="15" cols="80">'.s($templatecontent).'</textarea></div>';
 echo '</td>';
 echo '</tr>';
 
@@ -304,7 +323,14 @@ if ($mode == 'listtemplate'){
 
     $field = 'listtemplatefooter';
     $editor->use_editor($field, $options);
-    echo '<div><textarea id="'.$field.'" name="'.$field.'" rows="15" cols="80">'.s($data->listtemplatefooter).'</textarea></div>';
+    $listtemplatefooter = '';
+    if (empty($disableeditor) && empty($enableeditor)) {
+        $listtemplatefooter = $data->listtemplatefooter;
+    } else {
+        // display the unsaved content
+        $listtemplatefooter = $mytemplate->listtemplatefooter;
+    }
+    echo '<div><textarea id="'.$field.'" name="'.$field.'" rows="15" cols="80">'.s($listtemplatefooter).'</textarea></div>';
     echo '</td>';
     echo '</tr>';
 } else if ($mode == 'rsstemplate') {
@@ -315,7 +341,14 @@ if ($mode == 'listtemplate'){
 
     $field = 'rsstitletemplate';
     $editor->use_editor($field, $options);
-    echo '<div><textarea id="'.$field.'" name="'.$field.'" rows="15" cols="80">'.s($data->rsstitletemplate).'</textarea></div>';
+    $rsstitletemplate = '';
+    if (empty($disableeditor) && empty($enableeditor)) {
+        $rsstitletemplate = $data->rsstitletemplate;
+    } else {
+        // display the unsaved content
+        $rsstitletemplate = $mytemplate->rsstitletemplate;
+    }
+    echo '<div><textarea id="'.$field.'" name="'.$field.'" rows="15" cols="80">'.s($rsstitletemplate).'</textarea></div>';
     echo '</td>';
     echo '</tr>';
 }
