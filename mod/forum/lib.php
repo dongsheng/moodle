@@ -526,6 +526,11 @@ function forum_cron() {
                     // oops - this user should not receive anything from this course
                     continue;
                 }
+                // Don't send email if the forum is Q&A and the user has not posted
+                if ($forum->type == 'qanda' && !forum_get_user_posted_time($discussion->id, $userto->id)) {
+                    mtrace('Did not email '.$userto->id.' because user has not posted in discussion');
+                    continue;
+                }
 
                 // Get info about the sending user
                 if (array_key_exists($post->userid, $users)) { // we might know him/her already
@@ -4640,8 +4645,29 @@ function forum_user_has_posted($forumid, $did, $userid) {
                  WHERE p.userid = :userid AND d.forum = :forumid";
         return $DB->record_exists_sql($sql, array('forumid'=>$forumid,'userid'=>$userid));
     } else {
-    return $DB->record_exists('forum_posts', array('discussion'=>$did,'userid'=>$userid));
+        return $DB->record_exists('forum_posts', array('discussion'=>$did,'userid'=>$userid));
+    }
 }
+
+/**
+ * Returns creation time of the first user's post in given discussion
+ * @global object $DB
+ * @param int $did Discussion id
+ * @param int $userid User id
+ * @return int post creation time stamp
+ */
+function forum_get_user_posted_time($did, $userid) {
+    global $DB;
+
+    $sql = "SELECT p.created
+              FROM {forum_posts} p
+             WHERE p.userid = ? AND p.discussion = ?
+          ORDER BY p.created";
+    $posts = $DB->get_records_sql($sql, array($userid, $did), 0, 1);
+    if (empty($posts)) {
+        return false;
+    }
+    return array_pop($posts)->created;
 }
 
 /**
@@ -4893,7 +4919,7 @@ function forum_user_can_see_discussion($forum, $discussion, $context, $user=NULL
  * @return bool
  */
 function forum_user_can_see_post($forum, $discussion, $post, $user=NULL, $cm=NULL) {
-    global $USER, $DB;
+    global $CFG, $USER, $DB;
 
     // retrieve objects (yuk)
     if (is_numeric($forum)) {
@@ -4954,9 +4980,10 @@ function forum_user_can_see_post($forum, $discussion, $post, $user=NULL, $cm=NUL
     if ($forum->type == 'qanda') {
         $firstpost = forum_get_firstpost_from_discussion($discussion->id);
         $modcontext = get_context_instance(CONTEXT_MODULE, $cm->id);
+        $userfirstpost = forum_get_user_posted_time($discussion->id, $user->id);
 
-        return (forum_user_has_posted($forum->id,$discussion->id,$user->id) ||
-                $firstpost->id == $post->id ||
+        return (($userfirstpost !== false && (time() - $userfirstpost >= $CFG->maxeditingtime)) ||
+                $firstpost->id == $post->id || $post->userid == $user->id || $firstpost->userid == $user->id ||
                 has_capability('mod/forum:viewqandawithoutposting', $modcontext, $user->id, false));
     }
     return true;
