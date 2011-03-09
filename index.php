@@ -206,7 +206,11 @@
                 echo html_writer::tag('a', get_string('skipa', 'access', moodle_strtolower(get_string('courses'))), array('href'=>'#skipcourses', 'class'=>'skip-block'));
                 echo $OUTPUT->heading(get_string('courses'), 2, 'headingblock header');
                 $renderer = $PAGE->get_renderer('core','course');
-                echo $renderer->course_category_tree(get_course_category_tree());
+                try {
+                    echo $renderer->course_category_tree(get_course_category_tree());
+                } catch (moodle_exception $e) {
+                    echo $OUTPUT->notification($e->getMessage());
+                }
                 print_course_search('', false, 'short');
                 echo html_writer::tag('span', '', array('class'=>'skip-block-to', 'id'=>'skipcourses'));
             break;

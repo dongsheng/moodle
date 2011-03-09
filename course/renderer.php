@@ -62,22 +62,27 @@ class core_course_renderer extends plugin_renderer_base {
      * @return string
      */
     public function course_category_tree(array $structure) {
-        $this->strings->summary = get_string('summary');
 
-        // Generate an id and the required JS call to make this a nice widget
-        $id = html_writer::random_id('course_category_tree');
-        $this->page->requires->js_init_call('M.util.init_toggle_class_on_click', array($id, '.category.with_children .category_label', 'collapsed', '.category.with_children'));
+        if (empty($structure)) {
+            $content = 'too many courses';
+        } else {
+            $this->strings->summary = get_string('summary');
 
-        // Start content generation
-        $content = html_writer::start_tag('div', array('class'=>'course_category_tree', 'id'=>$id));
-        foreach ($structure as $category) {
-            $content .= $this->course_category_tree_category($category);
+            // Generate an id and the required JS call to make this a nice widget
+            $id = html_writer::random_id('course_category_tree');
+            $this->page->requires->js_init_call('M.util.init_toggle_class_on_click', array($id, '.category.with_children .category_label', 'collapsed', '.category.with_children'));
+
+            // Start content generation
+            $content = html_writer::start_tag('div', array('class'=>'course_category_tree', 'id'=>$id));
+            foreach ($structure as $category) {
+                $content .= $this->course_category_tree_category($category);
+            }
+            $content .= html_writer::start_tag('div', array('class'=>'controls'));
+            $content .= html_writer::tag('div', get_string('collapseall'), array('class'=>'addtoall expandall'));
+            $content .= html_writer::tag('div', get_string('expandall'), array('class'=>'removefromall collapseall'));
+            $content .= html_writer::end_tag('div');
+            $content .= html_writer::end_tag('div');
         }
-        $content .= html_writer::start_tag('div', array('class'=>'controls'));
-        $content .= html_writer::tag('div', get_string('collapseall'), array('class'=>'addtoall expandall'));
-        $content .= html_writer::tag('div', get_string('expandall'), array('class'=>'removefromall collapseall'));
-        $content .= html_writer::end_tag('div');
-        $content .= html_writer::end_tag('div');
 
         // Return the course category tree HTML
         return $content;

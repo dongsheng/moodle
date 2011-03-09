@@ -2049,6 +2049,14 @@ function make_categories_list(&$list, &$parents, $requiredcapability = '',
  */
 function get_course_category_tree($id = 0, $depth = 0) {
     global $DB, $CFG;
+    static $coursecount;
+    if (empty($coursecount)) {
+        $coursecount = $DB->count_records('course');
+        if ($coursecount > $CFG->numcoursesincombo) {
+            $link = new moodle_url('/course/');
+            throw new moodle_exception('maxnumcoursesincombo', 'moodle', null, $link->out());
+        }
+    }
     $viewhiddencats = has_capability('moodle/category:viewhiddencategories', get_context_instance(CONTEXT_SYSTEM));
     $categories = get_child_categories($id);
     $categoryids = array();
