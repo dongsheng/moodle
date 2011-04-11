@@ -539,6 +539,8 @@ function wiki_extend_navigation(navigation_node $navref, $course, $module, $cm) 
         $link = new moodle_url('/mod/wiki/map.php', array('pageid' => $pageid));
         $node = $navref->add(get_string('map', 'wiki'), $link, navigation_node::TYPE_SETTING);
     }
+    $link = new moodle_url('/mod/wiki/files.php', array('pageid' => $pageid));
+    $node = $navref->add(get_string('files', 'wiki'), $link, navigation_node::TYPE_SETTING);
 }
 /**
  * Returns all other caps used in wiki module
