@@ -548,3 +548,38 @@ function wiki_extend_navigation(navigation_node $navref, $course, $module, $cm) 
 function wiki_get_extra_capabilities() {
     return array('moodle/comment:view', 'moodle/comment:post', 'moodle/comment:delete');
 }
+
+/**
+ * Validate comment data before adding to database
+ *
+ * @param stdClass $comment
+ * @param stdClass $args
+ * @return boolean
+ */
+function wiki_comment_add($comment, $args) {
+    global $DB, $CFG;
+    require_once($CFG->dirroot . '/mod/wiki/locallib.php');
+    // validate comment area
+    if ($comment->commentarea != 'wiki_page') {
+        throw new comment_exception('invalidcommentarea');
+    }
+    // validate itemid
+    if (!$record = $DB->get_record('wiki_pages', array('id'=>$comment->itemid))) {
+        throw new comment_exception('invalidcommentitemid');
+    }
+    if (!$wiki = wiki_get_wiki_from_pageid($comment->itemid)) {
+        throw new comment_exception('invalidid', 'data');
+    }
+    if (!$course = $DB->get_record('course', array('id'=>$wiki->course))) {
+        throw new comment_exception('coursemisconf');
+    }
+    if (!$cm = get_coursemodule_from_instance('wiki', $wiki->id, $course->id)) {
+        throw new comment_exception('invalidcoursemodule');
+    }
+    $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+    // validate context id
+    if ($context->id != $comment->contextid) {
+        throw new comment_exception('invalidcontext');
+    }
+    return true;
+}
