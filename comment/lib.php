@@ -177,7 +177,11 @@ class comment {
         }
 
         if (!empty($options->component)) {
+            // set and validate component
             $this->set_component($options->component);
+        } else {
+            // component cannot be empty
+            throw new comment_exception('invalidcomponent');
         }
 
         // setup course
@@ -223,9 +227,9 @@ class comment {
         } else if ($this->context->contextlevel == CONTEXT_MODULE && $this->courseid == SITEID) {
             $this->ignoresystempermissions = true;
         }
-        if (!empty($this->plugintype) && !empty($this->plugintype)) {
+        if (!empty($this->plugintype) && !empty($this->pluginname)) {
             // Plugins can override this if they wish.
-            $this->ignoresystempermissions = plugin_callback($this->plugintype, $this->pluginname, FEATURE_COMMENT, 'ignore_system_permissions', $this, $this->ignoresystempermissions);
+            $this->ignoresystempermissions = plugin_callback($this->plugintype, $this->pluginname, 'comment', 'ignore_system_permissions', $this, $this->ignoresystempermissions);
         }
 
         // setup notoggle
@@ -267,7 +271,7 @@ class comment {
         $this->template .= html_writer::tag('div', '___content___');
         $this->template .= html_writer::end_tag('div'); // .comment-content
         if (!empty($this->plugintype)) {
-            $this->template = plugin_callback($this->plugintype, $this->pluginname, FEATURE_COMMENT, 'template', $this->args, $this->template);
+            $this->template = plugin_callback($this->plugintype, $this->pluginname, 'comment', 'template', $this->args, $this->template);
         }
 
         unset($options);
@@ -344,7 +348,7 @@ class comment {
         $this->postcap = has_capability('moodle/comment:post', $this->context);
         $this->viewcap = has_capability('moodle/comment:view', $this->context);
         if (!empty($this->plugintype)) {
-            $permissions = plugin_callback($this->plugintype, $this->pluginname, FEATURE_COMMENT, 'permissions', array($this->args), array('post'=>true, 'view'=>true));
+            $permissions = plugin_callback($this->plugintype, $this->pluginname, 'comment', 'permissions', array($this->args), array('post'=>true, 'view'=>true));
             if ($this->ignoresystempermissions) {
                 $this->postcap = $permissions['post'];
                 $this->viewcap = $permissions['view'];
@@ -595,7 +599,7 @@ class comment {
 
         if (!empty($this->plugintype)) {
             // moodle module will filter comments
-            $comments = plugin_callback($this->plugintype, $this->pluginname, FEATURE_COMMENT, 'display', array($comments, $this->args), $comments);
+            $comments = plugin_callback($this->plugintype, $this->pluginname, 'comment', 'display', array($comments, $this->args), $comments);
         }
 
         return $comments;
@@ -673,12 +677,11 @@ class comment {
         $newcmt->userid       = $USER->id;
         $newcmt->timecreated  = $now;
 
-        if (!empty($this->plugintype)) {
-            // moodle module will check content
-            $ret = plugin_callback($this->plugintype, $this->pluginname, FEATURE_COMMENT, 'add', array(&$newcmt, $this->args), true);
-            if (!$ret) {
-                throw new comment_exception('modulererejectcomment');
-            }
+        // Moodle 2.0.3 onward, we change default value of callback to false, plugins should implement callback to verify parameters
+        // then return true
+        $ret = plugin_callback($this->plugintype, $this->pluginname, 'comment', 'add', array(&$newcmt, $this->args), false);
+        if (!$ret) {
+            throw new comment_exception('callbackrejectcomment');
         }
 
         $cmt_id = $DB->insert_record('comments', $newcmt);
@@ -923,9 +926,4 @@ class comment {
 }
 
 class comment_exception extends moodle_exception {
-    public $message;
-    function __construct($errorcode) {
-        $this->errorcode = $errorcode;
-        $this->message = get_string($errorcode, 'error');
-    }
 }

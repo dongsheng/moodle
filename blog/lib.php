@@ -966,3 +966,23 @@ function blog_get_associated_count($courseid, $cmid=null) {
     }
     return $DB->count_records('blog_association', array('contextid' => $context->id));
 }
+
+/**
+ * Validate comment data before adding to database
+ *
+ * @param stdClass $comment
+ * @param stdClass $args
+ * @return boolean
+ */
+function blog_comment_add($comment, $args) {
+    global $DB;
+    // validate comment itemid
+    if (!$entry = $DB->get_record('post', array('id'=>$comment->itemid))) {
+        throw new comment_exception('invalidcommentitemid');
+    }
+    // validate comment area
+    if ($comment->commentarea != 'format_blog') {
+        throw new comment_exception('invalidcommentarea');
+    }
+    return true;
+}

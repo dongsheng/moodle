@@ -3098,3 +3098,37 @@ function data_presets_export($course, $cm, $data, $tostorage=false) {
     // Return the full path to the exported preset file:
     return $exportfile;
 }
+
+/**
+ * Validate comment data before adding to database
+ *
+ * @param stdClass $comment
+ * @param stdClass $args
+ * @return boolean
+ */
+function data_comment_add($comment, $args) {
+    global $DB;
+    // validate comment area
+    if ($comment->commentarea != 'database_entry') {
+        throw new comment_exception('invalidcommentarea');
+    }
+    // validate itemid
+    if (!$record = $DB->get_record('data_records', array('id'=>$comment->itemid))) {
+        throw new comment_exception('invalidcommentitemid');
+    }
+    if (!$data = $DB->get_record('data', array('id'=>$record->dataid))) {
+        throw new comment_exception('invalidid', 'data');
+    }
+    if (!$course = $DB->get_record('course', array('id'=>$data->course))) {
+        throw new comment_exception('coursemisconf');
+    }
+    if (!$cm = get_coursemodule_from_instance('data', $data->id, $course->id)) {
+        throw new comment_exception('invalidcoursemodule');
+    }
+    $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+    // validate context id
+    if ($context->id != $comment->contextid) {
+        throw new comment_exception('invalidcontext');
+    }
+    return true;
+}

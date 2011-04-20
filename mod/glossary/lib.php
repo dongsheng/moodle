@@ -2654,3 +2654,37 @@ function glossary_extend_settings_navigation(settings_navigation $settings, navi
         $glossarynode->add($string, $url, settings_navigation::TYPE_SETTING, null, null, new pix_icon('i/rss', ''));
     }
 }
+
+/**
+ * Validate comment data before adding to database
+ *
+ * @param stdClass $comment
+ * @param stdClass $args
+ * @return boolean
+ */
+function glossary_comment_add($comment, $args) {
+    global $DB;
+    // validate comment area
+    if ($comment->commentarea != 'glossary_entry') {
+        throw new comment_exception('invalidcommentarea');
+    }
+    // validate itemid
+    if (!$record = $DB->get_record('glossary_entries', array('id'=>$comment->itemid))) {
+        throw new comment_exception('invalidcommentitemid');
+    }
+    if (!$glossary = $DB->get_record('glossary', array('id'=>$record->glossaryid))) {
+        throw new comment_exception('invalidid', 'data');
+    }
+    if (!$course = $DB->get_record('course', array('id'=>$glossary->course))) {
+        throw new comment_exception('coursemisconf');
+    }
+    if (!$cm = get_coursemodule_from_instance('glossary', $glossary->id, $course->id)) {
+        throw new comment_exception('invalidcoursemodule');
+    }
+    $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+    // validate context id
+    if ($context->id != $comment->contextid) {
+        throw new comment_exception('invalidcontext');
+    }
+    return true;
+}

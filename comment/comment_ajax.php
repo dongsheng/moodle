@@ -27,15 +27,22 @@ $action    = optional_param('action', '', PARAM_ALPHA);
 
 list($context, $course, $cm) = get_context_info_array($contextid);
 
-$PAGE->set_context($context);
+$PAGE->set_context($context, true, $cm);
 $PAGE->set_url('/comment/comment_ajax.php');
 
+$action = optional_param('action', '', PARAM_ALPHA);
+
+// Allow anonymous user to view comments
+if ($action != 'get') {
+    require_login($course, true, $cm);
+}
+
 if (!confirm_sesskey()) {
-    $error = array('error'=>get_string('invalidsesskey'));
+    $error = array('error'=>get_string('invalidsesskey', 'error'));
     die(json_encode($error));
 }
 
-$client_id = required_param('client_id', PARAM_RAW);
+$client_id = required_param('client_id', PARAM_ALPHANUM);
 $area      = optional_param('area',      '', PARAM_ALPHAEXT);
 $commentid = optional_param('commentid', -1, PARAM_INT);
 $content   = optional_param('content',   '', PARAM_RAW);
