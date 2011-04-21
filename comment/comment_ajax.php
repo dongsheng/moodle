@@ -27,14 +27,18 @@ $action    = optional_param('action', '', PARAM_ALPHA);
 
 list($context, $course, $cm) = get_context_info_array($contextid);
 
-$PAGE->set_context($context, true, $cm);
 $PAGE->set_url('/comment/comment_ajax.php');
 
-$action = optional_param('action', '', PARAM_ALPHA);
-
-// Allow anonymous user to view comments
-if ($action != 'get') {
+// Allow anonymous user to view comments providing forcelogin now enabled
+if ($action != 'get' || !empty($CFG->forcelogin)) {
     require_login($course, true, $cm);
+} else {
+    $PAGE->set_context($context);
+    if (!empty($cm)) {
+        $PAGE->set_cm($cm, $course);
+    } else if (!empty($course)) {
+        $PAGE->set_course($course);
+    }
 }
 
 if (!confirm_sesskey()) {
@@ -78,9 +82,12 @@ switch ($action) {
         break;
     case 'delete':
         if ($manager->can_delete()) {
-            $result = $manager->delete($commentid);
-            if ($result === true) {
-                echo json_encode(array('client_id'=>$client_id, 'commentid'=>$commentid));
+            if ($manager->delete($commentid)) {
+                $result = array(
+                    'client_id' => $client_id,
+                    'commentid' => $commentid
+                );
+                echo json_encode($result);
                 die();
             }
         }
@@ -88,12 +95,13 @@ switch ($action) {
     case 'get':
     default:
         if ($manager->can_view()) {
-            $result = array();
             $comments = $manager->get_comments($page);
-            $result['list'] = $comments;
-            $result['count'] = $manager->count();
-            $result['pagination'] = $manager->get_pagination($page);
-            $result['client_id']  = $client_id;
+            $result = array(
+                'list'       => $comments,
+                'count'      => $manager->count(),
+                'pagination' => $manager->get_pagination($page),
+                'client_id'  => $client_id
+            );
             echo json_encode($result);
             die();
         }

@@ -26,12 +26,12 @@ list($context, $course, $cm) = get_context_info_array($contextid);
 require_login($course, true, $cm);
 require_sesskey();
 
-$action    = optional_param('action',    '',     PARAM_ALPHA);
-$area      = optional_param('area',      '',     PARAM_ALPHAEXT);
-$content   = optional_param('content',   '',     PARAM_RAW);
-$itemid    = optional_param('itemid',    '',     PARAM_INT);
-$returnurl = optional_param('returnurl', '/',     PARAM_URL);
-$component = optional_param('component', '', PARAM_ALPHAEXT);
+$action    = optional_param('action',    '',  PARAM_ALPHA);
+$area      = optional_param('area',      '',  PARAM_ALPHAEXT);
+$content   = optional_param('content',   '',  PARAM_RAW);
+$itemid    = optional_param('itemid',    '',  PARAM_INT);
+$returnurl = optional_param('returnurl', '/', PARAM_URL);
+$component = optional_param('component', '',  PARAM_ALPHAEXT);
 
 // Currently this script can only add comments
 if ($action !== 'add') {
