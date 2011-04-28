@@ -548,3 +548,19 @@ function wiki_extend_navigation(navigation_node $navref, $course, $module, $cm) 
 function wiki_get_extra_capabilities() {
     return array('moodle/comment:view', 'moodle/comment:post', 'moodle/comment:delete');
 }
+/**
+ * Return a list of page types
+ * @param string $pagetype current page type
+ * @param stdClass $parentcontext Block's parent context
+ * @param stdClass $currentcontext Current context of block
+ */
+function wiki_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+    $module_pagetype = array(
+        'mod-wiki-*'=>get_string('page-mod-wiki-x', 'wiki'),
+        'mod-wiki-view'=>get_string('page-mod-wiki-view', 'wiki'),
+        'mod-wiki-comments'=>get_string('page-mod-wiki-comments', 'wiki'),
+        'mod-wiki-history'=>get_string('page-mod-wiki-history', 'wiki'),
+        'mod-wiki-map'=>get_string('page-mod-wiki-map', 'wiki')
+    );
+    return $module_pagetype;
+}

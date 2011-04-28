@@ -3098,3 +3098,14 @@ function data_presets_export($course, $cm, $data, $tostorage=false) {
     // Return the full path to the exported preset file:
     return $exportfile;
 }
+
+/**
+ * Return a list of page types
+ * @param string $pagetype current page type
+ * @param stdClass $parentcontext Block's parent context
+ * @param stdClass $currentcontext Current context of block
+ */
+function data_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+    $module_pagetype = array('mod-data-*'=>get_string('page-mod-data-x', 'data'));
+    return $module_pagetype;
+}

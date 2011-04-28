@@ -218,6 +218,7 @@ $string['nopermissiontoviewresult'] = 'You can only look at results for your own
 $string['notcategorised'] = 'Not categorised';
 $string['numberofentries'] = 'Number of entries';
 $string['onebyline'] = '(one per line)';
+$string['page-mod-glossary-x'] = 'Any glossary module page';
 $string['pluginadministration'] = 'Glossary administration';
 $string['pluginname'] = 'Glossary';
 $string['popupformat'] = 'Popup format';

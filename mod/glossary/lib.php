@@ -2654,3 +2654,14 @@ function glossary_extend_settings_navigation(settings_navigation $settings, navi
         $glossarynode->add($string, $url, settings_navigation::TYPE_SETTING, null, null, new pix_icon('i/rss', ''));
     }
 }
+
+/**
+ * Return a list of page types
+ * @param string $pagetype current page type
+ * @param stdClass $parentcontext Block's parent context
+ * @param stdClass $currentcontext Current context of block
+ */
+function glossary_pagetypelist($pagetype, $parentcontext, $currentcontext) {
+    $module_pagetype = array('mod-glossary-*'=>get_string('page-mod-glossary-x', 'glossary'));
+    return $module_pagetype;
+}
