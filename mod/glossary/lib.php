@@ -2682,9 +2682,60 @@ function glossary_comment_add($comment, $args) {
         throw new comment_exception('invalidcoursemodule');
     }
     $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+
+    if (!$record->approved and !has_capability('mod/glossary:approve', $context)) {
+        throw new comment_exception('notapproved', 'glossary');
+    }
     // validate context id
     if ($context->id != $comment->contextid) {
         throw new comment_exception('invalidcontext');
     }
     return true;
+}
+
+/**
+ * Running addtional permission check on plugins
+ *
+ * @param stdClass $args
+ * @return array
+ */
+function glossary_comment_permissions($args) {
+    return array('post'=>true, 'view'=>true);
+}
+
+/**
+ * Validate comment data before displaying comments
+ *
+ * @param array $comments
+ * @param stdClass $args
+ * @return boolean
+ */
+function glossary_comment_display($comments, $args) {
+    global $DB;
+    // validate comment area
+    if ($args->commentarea != 'glossary_entry') {
+        throw new comment_exception('invalidcommentarea');
+    }
+    if (!$record = $DB->get_record('glossary_entries', array('id'=>$args->itemid))) {
+        throw new comment_exception('invalidcommentitemid');
+    }
+    if (!$glossary = $DB->get_record('glossary', array('id'=>$record->glossaryid))) {
+        throw new comment_exception('invalidid', 'data');
+    }
+    if (!$course = $DB->get_record('course', array('id'=>$glossary->course))) {
+        throw new comment_exception('coursemisconf');
+    }
+    if (!$cm = get_coursemodule_from_instance('glossary', $glossary->id, $course->id)) {
+        throw new comment_exception('invalidcoursemodule');
+    }
+    $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+
+    if ($glossary->defaultapproval and !$record->approved and !has_capability('mod/glossary:approve', $context)) {
+        throw new comment_exception('notapproved', 'glossary');
+    }
+    // validate context id
+    if ($context->id != $args->context->id) {
+        throw new comment_exception('invalidcontext');
+    }
+    return $comments;
 }

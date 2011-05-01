@@ -986,3 +986,33 @@ function blog_comment_add($comment, $args) {
     }
     return true;
 }
+
+/**
+ * Running addtional permission check on plugins
+ *
+ * @param stdClass $args
+ * @return array
+ */
+function blog_comment_permissions($args) {
+    return array('post'=>true, 'view'=>true);
+}
+
+/**
+ * Validate comment data before displaying comments
+ *
+ * @param stdClass $comment
+ * @param stdClass $args
+ * @return boolean
+ */
+function blog_comment_display($comments, $args) {
+    global $DB;
+    // validate comment itemid
+    if (!$entry = $DB->get_record('post', array('id'=>$args->itemid))) {
+        throw new comment_exception('invalidcommentitemid');
+    }
+    // validate comment area
+    if ($args->commentarea != 'format_blog') {
+        throw new comment_exception('invalidcommentarea');
+    }
+    return $comments;
+}
