@@ -567,6 +567,9 @@ function wiki_comment_add($comment, $args) {
     if (!$record = $DB->get_record('wiki_pages', array('id'=>$comment->itemid))) {
         throw new comment_exception('invalidcommentitemid');
     }
+    if (!$subwiki = wiki_get_subwiki($record->subwikiid)) {
+        throw new comment_exception('invalidsubwikiid');
+    }
     if (!$wiki = wiki_get_wiki_from_pageid($comment->itemid)) {
         throw new comment_exception('invalidid', 'data');
     }
@@ -577,9 +580,75 @@ function wiki_comment_add($comment, $args) {
         throw new comment_exception('invalidcoursemodule');
     }
     $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+    // group access
+    if ($subwiki->groupid) {
+        $groupmode = groups_get_activity_groupmode($cm, $course);
+        if ($groupmode == SEPARATEGROUPS and !has_capability('moodle/site:accessallgroups', $context)) {
+            if (!groups_is_member($subwiki->groupid)) {
+                throw new comment_exception('notmemberofgroup');
+            }
+        }
+    }
     // validate context id
     if ($context->id != $comment->contextid) {
         throw new comment_exception('invalidcontext');
     }
     return true;
+}
+
+/**
+ * Running addtional permission check on plugins
+ *
+ * @param stdClass $args
+ * @return array
+ */
+function wiki_comment_permissions($args) {
+    return array('post'=>true, 'view'=>true);
+}
+
+/**
+ * Validate comment data before displaying comments
+ *
+ * @param stdClass $comment
+ * @param stdClass $args
+ * @return boolean
+ */
+function wiki_comment_display($comments, $args) {
+    global $DB, $CFG;
+    require_once($CFG->dirroot . '/mod/wiki/locallib.php');
+    // validate comment area
+    if ($args->commentarea != 'wiki_page') {
+        throw new comment_exception('invalidcommentarea');
+    }
+    // validate itemid
+    if (!$record = $DB->get_record('wiki_pages', array('id'=>$args->itemid))) {
+        throw new comment_exception('invalidcommentitemid');
+    }
+    if (!$subwiki = wiki_get_subwiki($record->subwikiid)) {
+        throw new comment_exception('invalidsubwikiid');
+    }
+    if (!$wiki = wiki_get_wiki_from_pageid($args->itemid)) {
+        throw new comment_exception('invalidid', 'data');
+    }
+    if (!$course = $DB->get_record('course', array('id'=>$wiki->course))) {
+        throw new comment_exception('coursemisconf');
+    }
+    if (!$cm = get_coursemodule_from_instance('wiki', $wiki->id, $course->id)) {
+        throw new comment_exception('invalidcoursemodule');
+    }
+    $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+    // group access
+    if ($subwiki->groupid) {
+        $groupmode = groups_get_activity_groupmode($cm, $course);
+        if ($groupmode == SEPARATEGROUPS and !has_capability('moodle/site:accessallgroups', $context)) {
+            if (!groups_is_member($subwiki->groupid)) {
+                throw new comment_exception('notmemberofgroup');
+            }
+        }
+    }
+    // validate context id
+    if ($context->id != $args->context->id) {
+        throw new comment_exception('invalidcontext');
+    }
+    return $comments;
 }

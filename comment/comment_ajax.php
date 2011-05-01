@@ -30,15 +30,12 @@ list($context, $course, $cm) = get_context_info_array($contextid);
 $PAGE->set_url('/comment/comment_ajax.php');
 
 // Allow anonymous user to view comments providing forcelogin now enabled
-if ($action != 'get' || !empty($CFG->forcelogin)) {
-    require_login($course, true, $cm);
-} else {
-    $PAGE->set_context($context);
-    if (!empty($cm)) {
-        $PAGE->set_cm($cm, $course);
-    } else if (!empty($course)) {
-        $PAGE->set_course($course);
-    }
+require_course_login($course, true, $cm);
+$PAGE->set_context($context);
+if (!empty($cm)) {
+    $PAGE->set_cm($cm, $course);
+} else if (!empty($course)) {
+    $PAGE->set_course($course);
 }
 
 if (!confirm_sesskey()) {

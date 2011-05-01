@@ -115,18 +115,22 @@ class comment_manager {
         if (!$this->context) {
             return false;
         }
-        if ($this->context->contextlevel == CONTEXT_BLOCK) {
-            if ($block = $DB->get_record('block_instances', array('id' => $this->context->instanceid))) {
-                $this->plugintype = 'block';
-                $this->pluginname = $block->blockname;
-            }
-        }
-        if ($this->context->contextlevel == CONTEXT_MODULE) {
-            $this->plugintype = 'mod';
-            $this->cm = get_coursemodule_from_id('', $this->context->instanceid);
-            $this->setup_course($this->cm->course);
-            $this->modinfo = get_fast_modinfo($this->course);
-            $this->pluginname = $this->modinfo->cms[$this->cm->id]->modname;
+        switch ($this->context->contextlevel) {
+            case CONTEXT_BLOCK:
+                if ($block = $DB->get_record('block_instances', array('id' => $this->context->instanceid))) {
+                    $this->plugintype = 'block';
+                    $this->pluginname = $block->blockname;
+                } else {
+                    return false;
+                }
+                break;
+            case CONTEXT_MODULE:
+                $this->plugintype = 'mod';
+                $this->cm = get_coursemodule_from_id('', $this->context->instanceid);
+                $this->setup_course($this->cm->course);
+                $this->modinfo = get_fast_modinfo($this->course);
+                $this->pluginname = $this->modinfo->cms[$this->cm->id]->modname;
+                break;
         }
         return true;
     }
@@ -134,12 +138,17 @@ class comment_manager {
     /**
      * Print comments
      * @param int $page
+     * @return boolean return false if no comments available
      */
     public function print_comments($page = 0) {
-        global $CFG, $OUTPUT, $DB;
+        global $OUTPUT, $CFG, $OUTPUT, $DB;
 
         $count = $DB->count_records('comments');
         $comments = $this->get_comments($page);
+        if (count($comments) == 0) {
+            echo $OUTPUT->notification(get_string('nocomments', 'moodle'));
+            return false;
+        }
 
         $table = new html_table();
         $table->head = array (
@@ -168,6 +177,7 @@ class comment_manager {
         }
         echo html_writer::table($table);
         echo $OUTPUT->paging_bar($count, $page, $this->perpage, $CFG->wwwroot.'/comment/index.php');
+        return true;
     }
 
     /**

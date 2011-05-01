@@ -153,6 +153,20 @@ class comment {
      * Construct function of comment class, initialise
      * class members
      * @param stdClass $options
+     * @param object $options {
+     *            context => context context to use for the comment [required]
+     *            component => string which plugin will comment being added to [required]
+     *            itemid  => int the id of the associated item (forum post, glossary item etc) [required]
+     *            area    => string comment area
+     *            cm      => stdClass course module
+     *            course  => course course object
+     *            client_id => string an unique id to identify comment area
+     *            autostart => boolean automatically expend comments
+     *            showcount => boolean display the number of comments
+     *            displaycancel => boolean display cancel button
+     *            notoggle => boolean don't show/hide button
+     *            linktext => string title of show/hide button
+     * }
      */
     public function __construct(stdClass $options) {
         $this->viewcap = false;
@@ -348,7 +362,7 @@ class comment {
         $this->postcap = has_capability('moodle/comment:post', $this->context);
         $this->viewcap = has_capability('moodle/comment:view', $this->context);
         if (!empty($this->plugintype)) {
-            $permissions = plugin_callback($this->plugintype, $this->pluginname, 'comment', 'permissions', array($this->args), array('post'=>true, 'view'=>true));
+            $permissions = plugin_callback($this->plugintype, $this->pluginname, 'comment', 'permissions', array($this->args), array('post'=>false, 'view'=>false));
             if ($this->ignoresystempermissions) {
                 $this->postcap = $permissions['post'];
                 $this->viewcap = $permissions['view'];
@@ -819,7 +833,16 @@ class comment {
      * Returns an array containing comments in HTML format.
      *
      * @global core_renderer $OUTPUT
-     * @param stdClass $cmt
+     * @param stdClass $cmt {
+     *          id => int comment id
+     *          content => string comment content
+     *          format  => int comment text format
+     *          timecreated => int comment's timecreated
+     *          profileurl  => string link to user profile
+     *          fullname    => comment author's full name
+     *          avatar      => string user's avatar
+     *          delete      => boolean does user have permission to delete comment?
+     * }
      * @param bool $nonjs
      * @return array
      */
@@ -829,7 +852,7 @@ class comment {
         $replacements = array();
 
         if (!empty($cmt->delete) && empty($nonjs)) {
-            $deletelink  = html_writer::start_tag('div', array('comment-delete'));
+            $deletelink  = html_writer::start_tag('div', array('class'=>'comment-delete'));
             $deletelink .= html_writer::start_tag('a', array('href' => '#', 'id' => 'comment-delete-'.$this->cid.'-'.$cmt->id));
             $deletelink .= $OUTPUT->pix_icon('t/delete', get_string('delete'));
             $deletelink .= html_writer::end_tag('a');

@@ -1137,6 +1137,7 @@ $string['nobody'] = 'Nobody';
 $string['nocourses'] = 'No courses';
 $string['nocoursesfound'] = 'No courses were found with the words \'{$a}\'';
 $string['nocoursesyet'] = 'No courses in this category';
+$string['nocomments'] = 'No comments';
 $string['nodstpresets'] = 'The administrator has not enabled Daylight Savings Time support.';
 $string['nofilesselected'] = 'No files have been selected to restore';
 $string['nofilesyet'] = 'No files have been uploaded to your course yet';
