@@ -53,7 +53,7 @@ if (!$wiki = wiki_get_wiki($subwiki->wikiid)) {
     print_error('incorrectwikiid', 'wiki');
 }
 
-require_course_login($course->id, true, $cm);
+require_login($course->id, true, $cm);
 
 add_to_log($course->id, "wiki", "map", "map.php?id=$cm->id", "$wiki->id");
 
