@@ -666,7 +666,7 @@ abstract class repository {
             $file_info->copy_to_storage($user_context->id, 'user', 'draft', $draftitemid, $new_filepath, $new_filename);
             $info = array();
             $info['itemid'] = $draftitemid;
-            $info['title']  = $new_filename;
+            $info['file']  = $new_filename;
             $info['contextid'] = $user_context->id;
             $info['url'] = moodle_url::make_draftfile_url($draftitemid, $new_filepath, $new_filename)->out();;
             $info['filesize'] = $file_info->get_filesize();
@@ -1006,9 +1006,9 @@ abstract class repository {
                 unset($CFG->repository_no_delete);
             }
             return array(
-                'url'=>moodle_url::make_draftfile_url($file->get_itemid(), $file->get_filepath(), $file->get_filename())->out(),
-                'id'=>$file->get_itemid(),
+                'itemid'=>$file->get_itemid(),
                 'file'=>$file->get_filename(),
+                'url'=>moodle_url::make_draftfile_url($file->get_itemid(), $file->get_filepath(), $file->get_filename())->out(),
                 'icon' => $OUTPUT->pix_url(file_extension_icon($thefile, 32))->out(),
             );
         } else {
@@ -1712,6 +1712,12 @@ abstract class repository {
                 $newfile = $fs->create_file_from_storedfile(array('filepath'=>$filepath, 'filename'=>$filename), $tempfile);
                 // remove temp file
                 $tempfile->delete();
+                return array(
+                    'itemid'=>$newfile->get_itemid(),
+                    'file'=>$newfile->get_filename(),
+                    'url'=>moodle_url::make_draftfile_url($file->get_itemid(), $file->get_filepath(), $file->get_filename())->out(),
+                    'icon' => $OUTPUT->pix_url(file_extension_icon($thefile, 32))->out(),
+                );
                 return true;
             }
         }

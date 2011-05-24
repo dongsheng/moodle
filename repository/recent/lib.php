@@ -199,7 +199,7 @@ class repository_recent extends repository {
             } else {
                 $fs->create_file_from_storedfile($file_record, $stored_file);
                 $info = array();
-                $info['title']  = $new_filename;
+                $info['file']  = $new_filename;
                 $info['itemid'] = $draftitemid;
                 $info['filesize']  = $stored_file->get_filesize();
                 $info['url'] = moodle_url::make_draftfile_url($draftitemid, $new_filepath, $new_filename)->out();;
