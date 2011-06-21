@@ -580,7 +580,7 @@ class rating_manager {
                        r.itemid {$itemidtest} AND
                        r.component = :component AND
                        r.ratingarea = :ratingarea
-              GROUP BY r.itemid, r.component, r.ratingarea, r.contextid, ur.id, ur.userid, ur.scaleid
+              GROUP BY r.itemid, r.component, r.ratingarea, r.contextid, ur.id, ur.userid, ur.scaleid, ur.rating
               ORDER BY r.itemid";
         $ratingsrecords = $DB->get_records_sql($sql, $params);
 
