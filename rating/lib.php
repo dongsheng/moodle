@@ -298,7 +298,7 @@ class rating_manager {
     WHERE
         r.contextid = :contextid AND
         r.itemid $itemidtest
-    GROUP BY r.itemid, ur.rating, ur.id, ur.userid, ur.scaleid
+    GROUP BY r.itemid, ur.rating, ur.id, ur.userid, ur.scaleid, ur.rating
     ORDER BY r.itemid";
 
         $params['userid'] = $userid;
