@@ -115,6 +115,7 @@ class repository_googledocs extends repository {
         $fp = fopen($path, 'w');
         $gdocs = new google_docs(new google_authsub($this->subauthtoken));
         $gdocs->download_file($url, $fp);
+        fclose($fp);
 
         return array('path'=>$path, 'url'=>$url);
     }
