@@ -2637,13 +2637,31 @@ class curl {
      *
      * <code>
      * $c = new curl;
+     * $file1 = fopen('a', 'wb');
+     * $file2 = fopen('b', 'wb');
      * $c->download(array(
-     *              array('url'=>'http://localhost/', 'file'=>fopen('a', 'wb')),
-     *              array('url'=>'http://localhost/20/', 'file'=>fopen('b', 'wb'))
+     *     array('url'=>'http://localhost/', 'file'=>$file1),
+     *     array('url'=>'http://localhost/20/', 'file'=>$file2)
+     * ));
+     * fclose($file1);
+     * fclose($file2);
+     * </code>
+     *
+     * or
+     *
+     * <code>
+     * $c = new curl;
+     * $c->download(array(
+     *              array('url'=>'http://localhost/', 'filepath'=>'/tmp/file1.tmp'),
+     *              array('url'=>'http://localhost/20/', 'filepath'=>'/tmp/file2.tmp')
      *              ));
      * </code>
      *
-     * @param array $requests An array of files to request
+     * @param array $requests An array of files to request {
+     *                  url => url to download the file [required]
+     *                  file => file handler
+     *                  filepath => file path
+     * }
      * @param array $options An array of options to set
      * @return array An array of results
      */
@@ -2666,11 +2684,14 @@ class curl {
         $results = array();
         $main    = curl_multi_init();
         for ($i = 0; $i < $count; $i++) {
-            $url = $requests[$i];
-            foreach($url as $n=>$v){
-                $options[$n] = $url[$n];
+            if (!empty($requests[$i]['filepath'])) {
+                // open file
+                $requests[$i]['file'] = fopen($requests[$i]['filepath'], 'w');
             }
-            $handles[$i] = curl_init($url['url']);
+            foreach($requests[$i] as $n=>$v){
+                $options[$n] = $requests[$i][$n];
+            }
+            $handles[$i] = curl_init($requests[$i]['url']);
             $this->apply_opt($handles[$i], $options);
             curl_multi_add_handle($main, $handles[$i]);
         }
@@ -2687,6 +2708,13 @@ class curl {
             curl_multi_remove_handle($main, $handles[$i]);
         }
         curl_multi_close($main);
+
+        for ($i = 0; $i < $count; $i++) {
+            if (!empty($requests[$i]['filepath'])) {
+                // close file handler if file is opened in this function
+                fclose($requests[$i]['file']);
+            }
+        }
         return $results;
     }
     /**
