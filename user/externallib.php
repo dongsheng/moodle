@@ -645,7 +645,7 @@ class moodle_user_external extends external_api {
      * Get course participants details
      * @param int $courseid  course id
      * @param array $options options {
-     *          'name' => option name
+     *          'name' => option name, available options: limitfrom and limitnumber
      *          'value' => option value
      * }
      * @return array An array of users
@@ -661,6 +661,18 @@ class moodle_user_external extends external_api {
                 'options'=>$options
             )
         );
+
+        $limitfrom = 0;
+        if (!empty($options['limitfrom'])) {
+            $limitfrom = $options['limitfrom'];
+        }
+
+        // by default returning 50 users
+        $limitnumber = 50;
+        if (!empty($options['limitnumber'])) {
+            $limitnumber = $options['limitnumber'];
+        }
+
         $withcapability = '';
         $groupid        = 0;
         $onlyactive     = false;
@@ -720,7 +732,7 @@ class moodle_user_external extends external_api {
                   FROM {user} u $ctxjoin
                  WHERE u.id IN ($enrolledsql)
                  ORDER BY u.id ASC";
-        $enrolledusers = $DB->get_recordset_sql($sql, $enrolledparams);
+        $enrolledusers = $DB->get_recordset_sql($sql, $enrolledparams, $limitfrom, $limitnumber);
         $users = array();
         foreach ($enrolledusers as $user) {
             if (!empty($user->deleted)) {
