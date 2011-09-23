@@ -146,11 +146,25 @@ class repository_s3 extends repository {
     }
 
     /**
+     * Return file URL
+     *
+     * @param string $url the url of file
+     * @return string
+     */
+    public function get_link($filepath) {
+        $arr = explode('/', $filepath);
+        $bucket   = $arr[0];
+        $filename = $arr[1];
+        $url = $this->s->getFileURL($bucket, $filename);
+        return $url;
+    }
+
+    /**
      * S3 plugins doesn't support return links of files
      *
      * @return int
      */
     public function supported_returntypes() {
-        return FILE_INTERNAL;
+        return (FILE_INTERNAL | FILE_EXTERNAL);
     }
 }

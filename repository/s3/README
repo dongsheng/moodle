@@ -1,0 +1,7 @@
+Moodle S3 repository use Amazon S3 PHP Class created by Donovan Schonknecht.
+URL: http://undesigned.org.za/2007/10/22/amazon-s3-php-class
+Git Repository: https://github.com/tpyo/amazon-s3-php-class (version 0.5 onward)
+
+=========================================================================================
+Moodle Modified:
+# Added getFileUrl function to return public file url
