@@ -211,6 +211,13 @@
     <licenseversion>2.1</licenseversion>
   </library>
   <library>
+    <location>repository/s3/S3.php</location>
+    <name>Amazon S3 PHP class</name>
+    <license>BSD</license>
+    <version>0.4</version>
+    <licenseversion></licenseversion>
+  </library>
+  <library>
     <location>tcpdf</location>
     <name>TCPDF</name>
     <license>LGPL</license>

@@ -757,6 +757,20 @@ class S3 {
 	}
 
 	/**
+         * Return public file url
+	 *
+	 * @param string $bucket Bucket name
+	 * @param string $uri Object URI
+	 * @param boolean $hostBucket Use the bucket name as the hostname
+	 * @param boolean $https Use HTTPS ($hostBucket should be false for SSL verification)
+	 * @return string
+	 */
+        public static function getFileURL($bucket, $uri, $hostBucket = false, $https = false) {
+            $uri = str_replace('%2F', '/', rawurlencode($uri));
+            return sprintf(($https ? 'https' : 'http').'://%s/%s', $hostBucket ? $bucket : $bucket.'.s3.amazonaws.com', $uri);
+        }
+
+	/**
 	* Get upload POST parameters for form uploads
 	*
 	* @param string $bucket Bucket name
