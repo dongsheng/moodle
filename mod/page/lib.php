@@ -422,3 +422,39 @@ function page_page_type_list($pagetype, $parentcontext, $currentcontext) {
     $module_pagetype = array('mod-page-*'=>get_string('page-mod-page-x', 'page'));
     return $module_pagetype;
 }
+
+/**
+ * Export page resource contents
+ *
+ * @return array of file content
+ */
+function page_export_contents($cm, $baseurl) {
+    global $CFG, $DB;
+    $contents = array();
+    $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+
+    $page = $DB->get_record('page', array('id'=>$cm->instance), '*', MUST_EXIST);
+
+    $content = file_rewrite_pluginfile_urls($page->content, $baseurl, $context->id, 'mod_page', 'content', $page->revision);
+    $formatoptions = new stdClass;
+    $formatoptions->noclean = true;
+    $formatoptions->overflowdiv = true;
+    $formatoptions->context = $context;
+    $content = format_text($content, $page->contentformat, $formatoptions);
+
+    $page = array();
+    $page['type'] = 'content';
+    $page['filename']     = $page->name;
+    $page['filepath']     = null;
+    $page['filesize']     = 0;
+    $page['content']      = $content;
+    $page['timecreated']  = null;
+    $page['timemodified'] = $page->timemodified;
+    $page['sortorder']    = null;
+    $page['userid']       = null;
+    $page['author']       = null;
+    $page['license']      = null;
+    $contents[] = $page;
+
+    return $contents;
+}
