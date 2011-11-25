@@ -30,12 +30,6 @@ $filepath = optional_param('filepath', '/', PARAM_PATH);
 
 echo $OUTPUT->header();
 
-//Non admin can not authenticate if maintenance mode
-$hassiteconfig = has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM), $user);
-if (!empty($CFG->maintenance_enabled) and !$hassiteconfig) {
-    throw new moodle_exception('sitemaintenance', 'admin');
-}
-
 // web service must be enabled to use this script
 if (!$CFG->enablewebservices) {
     throw new moodle_exception('enablewsdescription', 'webservice');
@@ -43,6 +37,14 @@ if (!$CFG->enablewebservices) {
 // Obtain token record
 if (!$token = $DB->get_record('external_tokens', array('token'=>$token))) {
     throw new webservice_access_exception(get_string('invalidtoken', 'webservice'));
+}
+
+$user = $DB->get_record('user', array('id'=>$token->userid, 'deleted'=>0), '*', MUST_EXIST);
+
+//Non admin can not authenticate if maintenance mode
+$hassiteconfig = has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM), $user);
+if (!empty($CFG->maintenance_enabled) and !$hassiteconfig) {
+    throw new moodle_exception('sitemaintenance', 'admin');
 }
 
 // Validate token date
@@ -67,14 +69,6 @@ if ($token->iprestriction and !address_in_subnet(getremoteaddr(), $token->iprest
     throw new webservice_access_exception(get_string('invalidiptoken', 'webservice'));
 }
 
-$user = $DB->get_record('user', array('id'=>$token->userid, 'deleted'=>0), '*', MUST_EXIST);
-
-//check if the auth method is nologin (in this case refuse connection)
-if ($auth=='nologin') {
-    add_to_log(SITEID, 'webservice', 'nologin auth attempt with web service', '', $user->username);
-    throw new webservice_access_exception(get_string('nologinauth', 'webservice'));
-}
-
 //only confirmed user should be able to call web service
 if (empty($user->confirmed)) {
     add_to_log(SITEID, 'webservice', 'user unconfirmed', '', $user->username);
@@ -96,6 +90,12 @@ if (!empty($auth->config->expiration) and $auth->config->expiration == 1) {
         add_to_log(SITEID, 'webservice', 'expired password', '', $user->username);
         throw new webservice_access_exception(get_string('passwordisexpired', 'webservice'));
     }
+}
+
+//check if the auth method is nologin (in this case refuse connection)
+if ($auth=='nologin') {
+    add_to_log(SITEID, 'webservice', 'nologin auth attempt with web service', '', $user->username);
+    throw new webservice_access_exception(get_string('nologinauth', 'webservice'));
 }
 
 // log token access
