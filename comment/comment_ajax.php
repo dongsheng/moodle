@@ -16,6 +16,10 @@
 
 /*
  * Handling all ajax request for comments API
+ *
+ * @package   core_comment
+ * @copyright 2010 Dongsheng Cai <dongsheng@moodle.com>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 define('AJAX_SCRIPT', true);
 
