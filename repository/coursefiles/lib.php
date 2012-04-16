@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,20 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+require_once($CFG->dirroot . '/repository/lib.php');
+
 /**
  * repository_coursefiles class is used to browse course files
  *
  * @since 2.0
- * @package    repository
- * @subpackage coursefiles
- * @copyright  2010 Dongsheng Cai <dongsheng@moodle.com>
+ * @package    repository_coursefiles
+ * @copyright  2010 Dongsheng Cai {@link http://dongsheng.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class repository_coursefiles extends repository {
 
     /**
      * coursefiles plugin doesn't require login, so list all files
+     *
      * @return mixed
      */
     public function print_login() {
@@ -145,6 +145,7 @@ class repository_coursefiles extends repository {
     /**
      * Return is the instance is visible
      * (is the type visible ? is the context enable ?)
+     *
      * @return boolean
      */
     public function is_visible() {
@@ -169,6 +170,7 @@ class repository_coursefiles extends repository {
     public function supported_returntypes() {
         return (FILE_INTERNAL | FILE_EXTERNAL);
     }
+
     public static function get_type_option_names() {
         return array();
     }

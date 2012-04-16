@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,22 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * repository_flickr class
- * This plugin is used to access user's private flickr repository
- *
- * @since 2.0
- * @package    repository
- * @subpackage flickr
- * @copyright  2009 Dongsheng Cai
- * @author     Dongsheng Cai <dongsheng@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+require_once($CFG->dirroot . '/repository/lib.php');
 require_once($CFG->libdir.'/flickrlib.php');
 
 /**
+ * This plugin is used to access user's private flickr repository
  *
+ * @since 2.0
+ * @package    repository_flickr
+ * @copyright  2009 Dongsheng Cai {@link http://dongsheng.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class repository_flickr extends repository {
     private $flickr;

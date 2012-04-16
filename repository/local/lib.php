@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,15 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+require_once($CFG->dirroot . '/repository/lib.php');
+
 /**
  * repository_local class is used to browse moodle files
  *
- * @since      2.0
+ * @since 2.0
  * @package    repository_local
- * @copyright  2009 Dongsheng Cai <dongsheng@moodle.com>
+ * @copyright  2009 Dongsheng Cai {@link http://dongsheng.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class repository_local extends repository {
     /**
      * local plugin doesn't require login, so list all files
@@ -31,6 +31,15 @@ class repository_local extends repository {
      */
     public function print_login() {
         return $this->get_listing();
+    }
+
+    /**
+     * Does this repository used to browse moodle files?
+     *
+     * @return boolean
+     */
+    public function has_moodle_files() {
+        return true;
     }
 
     /**
@@ -107,16 +116,71 @@ class repository_local extends repository {
      * @return int
      */
     public function supported_returntypes() {
-        return FILE_INTERNAL;
+        return FILE_INTERNAL | FILE_REFERENCE;
     }
 
     /**
-     * Does this repository used to browse moodle files?
+     * Unpack file info and pack it, mainly for data validation
      *
-     * @return boolean
+     * @param string $source
+     * @return string file referece
      */
-    public function has_moodle_files() {
-        return true;
+    public function get_file_reference($source) {
+        $params = unserialize(base64_decode($source));
+        if (!is_array($params)) {
+            throw new repository_exception('invalidparams', 'repository');
+        }
+
+        $filename  = is_null($params['filename'])  ? NULL : clean_param($params['filename'], PARAM_FILE);
+        $filepath  = is_null($params['filepath'])  ? NULL : clean_param($params['filepath'], PARAM_PATH);;
+        $component = is_null($params['component']) ? NULL : clean_param($params['component'], PARAM_COMPONENT);
+        $filearea  = is_null($params['filearea'])  ? NULL : clean_param($params['filearea'], PARAM_AREA);
+        $itemid    = is_null($params['itemid'])    ? NULL : clean_param($params['itemid'], PARAM_INT);
+        $contextid = is_null($params['contextid']) ? NULL : clean_param($params['contextid'], PARAM_INT);
+
+        $storedfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
+
+        $reference = array();
+        $reference['contextid'] = $contextid;
+        $reference['component'] = $component;
+        $reference['filearea']  = $filearea;
+        $reference['itemid']    = $itemid;
+        $reference['filepath']  = $filepath;
+        $reference['filename']  = $filename;
+        $reference['userid']    = $storedfile->get_userid();
+
+        return base64_encode(serialize($reference));
+    }
+
+    /**
+     * Repository method to serve file
+     *
+     * @param stored_file $storedfile
+     * @param int $lifetime Number of seconds before the file should expire from caches (default 24 hours)
+     * @param int $filter 0 (default)=no filtering, 1=all files, 2=html files only
+     * @param bool $forcedownload If true (default false), forces download of file rather than view in browser/plugin
+     * @param string $filename Override filename
+     * @param bool $dontdie - return control to caller afterwards. this is not recommended and only used for cleanup tasks.
+     *                        if this is passed as true, ignore_user_abort is called.  if you don't want your processing to continue on cancel,
+     *                        you must detect this case when control is returned using connection_aborted. Please not that session is closed
+     *                        and should not be reopened.
+     */
+    public function send_file($storedfile, $lifetime=86400 , $filter=0, $forcedownload=false, $filename=null, $dontdie=false) {
+        $fs = get_file_storage();
+
+        $reference = $storedfile->get_reference();
+        $params = unserialize(base64_decode($reference));
+
+        $filename  = is_null($params['filename'])  ? NULL : clean_param($params['filename'], PARAM_FILE);
+        $filepath  = is_null($params['filepath'])  ? NULL : clean_param($params['filepath'], PARAM_PATH);;
+        $component = is_null($params['component']) ? NULL : clean_param($params['component'], PARAM_COMPONENT);
+        $filearea  = is_null($params['filearea'])  ? NULL : clean_param($params['filearea'], PARAM_AREA);
+        $itemid    = is_null($params['itemid'])    ? NULL : clean_param($params['itemid'], PARAM_INT);
+        $contextid = is_null($params['contextid']) ? NULL : clean_param($params['contextid'], PARAM_INT);
+
+        $srcfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
+
+        send_stored_file($srcfile, $lifetime, $filter, $forcedownload, $filename, $dontdie);
     }
 }
 

@@ -422,5 +422,31 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2012042300.02);
     }
 
+    if ($oldversion < 2012042700.01) {
+
+        // Define table files_reference to be created
+        $table = new xmldb_table('files_reference');
+
+        // Adding fields to table files_reference
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('fileid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('repositoryid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('reference', XMLDB_TYPE_TEXT, null, null, null, null, null);
+
+        // Adding keys to table files_reference
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+        // Adding indexes to table files_reference
+        $table->add_index('fileid', XMLDB_INDEX_UNIQUE, array('fileid'));
+
+        // Conditionally launch create table for files_reference
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2012042700.01);
+    }
+
     return true;
 }

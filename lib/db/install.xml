@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="lib/db" VERSION="20120122" COMMENT="XMLDB file for core Moodle tables"
+<XMLDB PATH="lib/db" VERSION="20120424" COMMENT="XMLDB file for core Moodle tables"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../lib/xmldb/xmldb.xsd"
 >
@@ -2813,7 +2813,7 @@
         <KEY NAME="fk_usercreated" TYPE="foreign" FIELDS="usercreated" REFTABLE="user" REFFIELDS="id" PREVIOUS="uq_area_method"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="grading_instances" COMMENT="Grading form instance is an assessment record for one gradable item assessed by one rater" PREVIOUS="grading_definitions">
+    <TABLE NAME="grading_instances" COMMENT="Grading form instance is an assessment record for one gradable item assessed by one rater" PREVIOUS="grading_definitions" NEXT="files_reference">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="definitionid"/>
         <FIELD NAME="definitionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the form definition this is instance of" PREVIOUS="id" NEXT="raterid"/>
@@ -2830,6 +2830,20 @@
         <KEY NAME="fk_definitionid" TYPE="foreign" FIELDS="definitionid" REFTABLE="grading_definitions" REFFIELDS="id" PREVIOUS="primary" NEXT="fk_raterid"/>
         <KEY NAME="fk_raterid" TYPE="foreign" FIELDS="raterid" REFTABLE="user" REFFIELDS="id" PREVIOUS="fk_definitionid"/>
       </KEYS>
+    </TABLE>
+    <TABLE NAME="files_reference" COMMENT="Store files references" PREVIOUS="grading_instances">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="fileid"/>
+        <FIELD NAME="fileid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="repositoryid"/>
+        <FIELD NAME="repositoryid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" PREVIOUS="fileid" NEXT="reference"/>
+        <FIELD NAME="reference" TYPE="text" NOTNULL="false" SEQUENCE="false" PREVIOUS="repositoryid"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="fileid" UNIQUE="true" FIELDS="fileid" COMMENT="fileid should be unique"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

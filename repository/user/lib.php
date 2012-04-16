@@ -15,20 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+require_once($CFG->dirroot . '/repository/lib.php');
+
 /**
  * repository_user class is used to browse user private files
  *
- * @since 2.0
- * @package    repository
- * @subpackage user
- * @copyright  2010 Dongsheng Cai <dongsheng@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since     2.0
+ * @package   repository
+ * @copyright 2010 Dongsheng Cai {@link http://dongsheng.org}
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class repository_user extends repository {
 
     /**
      * user plugin doesn't require login
+     *
      * @return mixed
      */
     public function print_login() {
@@ -116,20 +117,79 @@ class repository_user extends repository {
     }
 
     /**
-     * User file don't support to link to external links
-     *
-     * @return int
-     */
-    public function supported_returntypes() {
-        return FILE_INTERNAL;
-    }
-
-    /**
      * Does this repository used to browse moodle files?
      *
      * @return boolean
      */
     public function has_moodle_files() {
         return true;
+    }
+
+    /**
+     * User cannot use the external link to dropbox
+     *
+     * @return int
+     */
+    public function supported_returntypes() {
+        return FILE_INTERNAL | FILE_REFERENCE;
+    }
+
+    /**
+     * Prepare file reference information
+     *
+     * @param string $source
+     * @return string file referece
+     */
+    public function get_file_reference($source) {
+        global $USER;
+        $params = unserialize(base64_decode($source));
+        if (is_array($params)) {
+            $filepath = clean_param($params['filepath'], PARAM_PATH);;
+            $filename = clean_param($params['filename'], PARAM_FILE);
+        }
+        $context = get_context_instance(CONTEXT_USER, $USER->id);
+
+        // we store all file parameters, so file api could
+        // find the refernces later
+        $reference = array();
+        $reference['contextid'] = $context->id;
+        $reference['component'] = 'user';
+        $reference['filearea']  = 'private';
+        $reference['itemid']    = 0;
+        $reference['filepath']  = $filepath;
+        $reference['filename']  = $filename;
+        $reference['userid']    = $USER->id;
+
+        return base64_encode(serialize($reference));
+    }
+
+    /**
+     * Repository method to serve file
+     *
+     * @param stored_file $storedfile
+     * @param int $lifetime Number of seconds before the file should expire from caches (default 24 hours)
+     * @param int $filter 0 (default)=no filtering, 1=all files, 2=html files only
+     * @param bool $forcedownload If true (default false), forces download of file rather than view in browser/plugin
+     * @param string $filename Override filename
+     * @param bool $dontdie - return control to caller afterwards. this is not recommended and only used for cleanup tasks.
+     *                        if this is passed as true, ignore_user_abort is called.  if you don't want your processing to continue on cancel,
+     *                        you must detect this case when control is returned using connection_aborted. Please not that session is closed
+     *                        and should not be reopened.
+     */
+    public function send_file($storedfile, $lifetime=86400 , $filter=0, $forcedownload=false, $filename=null, $dontdie=false) {
+        $reference = $storedfile->get_reference();
+        $params = unserialize(base64_decode($reference));
+        $filepath = clean_param($params['filepath'], PARAM_PATH);;
+        $filename = clean_param($params['filename'], PARAM_FILE);
+        $userid   = clean_param($params['userid'], PARAM_INT);
+        $filearea  = 'private';
+        $component = 'user';
+        $itemid    = 0;
+        $context   = get_context_instance(CONTEXT_USER, $userid);
+
+        $fs = get_file_storage();
+        $storedfile = $fs->get_file($context->id, $component, $filearea, $itemid, $filepath, $filename);
+
+        send_stored_file($storedfile, $lifetime, $filter, $forcedownload, $filename, $dontdie);
     }
 }

@@ -115,3 +115,24 @@ class file_pool_content_exception extends file_exception {
         parent::__construct('hashpoolproblem', $contenthash, $debuginfo);
     }
 }
+
+/**
+ * Exception related to external file support
+ *
+ * @package   core_files
+ * @category  files
+ * @copyright 2012 Dongsheng Cai {@link http://dongsheng.org}
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class external_file_exception extends file_exception {
+    /**
+     * Constructor
+     *
+     * @param string   $errorcode error code
+     * @param stdClass $a extra information
+     * @param string   $debuginfo extra debug info
+     */
+    function __construct($errorcode, $a=NULL, $debuginfo = NULL) {
+        parent::__construct($errorcode, '', '', $a, $debuginfo);
+    }
+}

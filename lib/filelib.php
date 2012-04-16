@@ -694,6 +694,15 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
             if (!$file->is_directory()) {
                 $filecount++;
             }
+
+            if ($file->is_external_file()) {
+                $repoid = $file->get_repository_id();
+                if (!empty($repoid)) {
+                    $file_record['repositoryid'] = $repoid;
+                    $file_record['reference'] = $file->get_reference();
+                }
+            }
+
             $fs->create_file_from_storedfile($file_record, $file);
         }
 
@@ -749,6 +758,15 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
             if (!$file->is_directory()) {
                 $filecount++;
             }
+
+            if ($file->is_external_file()) {
+                $repoid = $file->get_repository_id();
+                if (!empty($repoid)) {
+                    $file_record['repositoryid'] = $repoid;
+                    $file_record['reference'] = $file->get_reference();
+                }
+            }
+
             $fs->create_file_from_storedfile($file_record, $file);
         }
     }
@@ -2001,6 +2019,12 @@ function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownl
         }
     }
 
+    // handle external resource
+    if ($stored_file->is_external_file()) {
+        $stored_file->repository->send_file($stored_file, $lifetime, $filter, $forcedownload, $filename, $dontdie);
+        die;
+    }
+
     if (!$stored_file or $stored_file->is_directory()) {
         // nothing to serve
         if ($dontdie) {
@@ -3033,7 +3057,7 @@ class curl_cache {
      * @global stdClass $CFG
      * @param string $module which module is using curl_cache
      */
-    function __construct($module = 'repository'){
+    function __construct($module = 'repository') {
         global $CFG;
         if (!empty($module)) {
             $this->dir = $CFG->cachedir.'/'.$module.'/';
@@ -3064,14 +3088,13 @@ class curl_cache {
      * @param mixed $param
      * @return bool|string
      */
-    public function get($param){
+    public function get($param) {
         global $CFG, $USER;
         $this->cleanup($this->ttl);
         $filename = 'u'.$USER->id.'_'.md5(serialize($param));
         if(file_exists($this->dir.$filename)) {
             $lasttime = filemtime($this->dir.$filename);
-            if(time()-$lasttime > $this->ttl)
-            {
+            if(time()-$lasttime > $this->ttl) {
                 return false;
             } else {
                 $fp = fopen($this->dir.$filename, 'r');
@@ -3091,7 +3114,7 @@ class curl_cache {
      * @param mixed $param
      * @param mixed $val
      */
-    public function set($param, $val){
+    public function set($param, $val) {
         global $CFG, $USER;
         $filename = 'u'.$USER->id.'_'.md5(serialize($param));
         $fp = fopen($this->dir.$filename, 'w');
@@ -3102,18 +3125,19 @@ class curl_cache {
     /**
      * Remove cache files
      *
-     * @param int $expire The number os seconds before expiry
+     * @param int $expire The number of seconds before expiry
      */
-    public function cleanup($expire){
-        if($dir = opendir($this->dir)){
+    public function cleanup($expire) {
+        if($dir = opendir($this->dir)) {
             while (false !== ($file = readdir($dir))) {
                 if(!is_dir($file) && $file != '.' && $file != '..') {
                     $lasttime = @filemtime($this->dir.$file);
-                    if(time() - $lasttime > $expire){
+                    if (time() - $lasttime > $expire) {
                         @unlink($this->dir.$file);
                     }
                 }
             }
+            closedir($dir);
         }
     }
     /**
@@ -3122,12 +3146,12 @@ class curl_cache {
      * @global object $CFG
      * @global object $USER
      */
-    public function refresh(){
+    public function refresh() {
         global $CFG, $USER;
-        if($dir = opendir($this->dir)){
+        if ($dir = opendir($this->dir)) {
             while (false !== ($file = readdir($dir))) {
-                if(!is_dir($file) && $file != '.' && $file != '..') {
-                    if(strpos($file, 'u'.$USER->id.'_')!==false){
+                if (!is_dir($file) && $file != '.' && $file != '..') {
+                    if (strpos($file, 'u'.$USER->id.'_') !== false) {
                         @unlink($this->dir.$file);
                     }
                 }
@@ -4003,4 +4027,158 @@ function file_pluginfile($relativepath, $forcedownload, $preview = null) {
         send_file_not_found();
     }
 
+}
+
+/**
+ * Universe file cacheing class
+ *
+ * @package    core_files
+ * @category   files
+ * @copyright  2012 Dongsheng Cai {@link http://dongsheng.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class cache_file {
+    /** @var string */
+    public $cachedir = '';
+
+    /**
+     * static method to create cache_file class instance
+     *
+     * @param array $options caching ooptions
+     */
+    public static function get_instance($options = array()) {
+        return new cache_file($options);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param array $options
+     */
+    private function __construct($options = array()) {
+        global $CFG;
+
+        // path to file caches
+        if (isset($options['cachedir'])) {
+            $this->cachedir = $options['cachedir'];
+        } else {
+            $this->cachedir = $CFG->cachedir . '/filedir';
+        }
+
+        // create cache directory
+        if (!file_exists($this->cachedir)) {
+            mkdir($this->cachedir, $CFG->directorypermissions, true);
+        }
+
+        // when use cache_file::get, it will check ttl
+        if (isset($options['ttl']) && is_numeric($options['ttl'])) {
+            $this->ttl = $options['ttl'];
+        } else {
+            // one day
+            $this->ttl = 60 * 60 * 24;
+        }
+    }
+
+    /**
+     * Get cached file, false if file expires
+     *
+     * @param mixed $param
+     * @param array $options caching options
+     * @return bool|string
+     */
+    public static function get($param, $options = array()) {
+        $instance = cache_file::get_instance($options);
+        $filepath = $instance->generate_filepath($param);
+        if(file_exists($filepath)) {
+            $lasttime = filemtime($filepath);
+            if(time() - $lasttime > $instance->ttl) {
+                // remove cache file
+                unlink($filepath);
+                return false;
+            } else {
+                return $filepath;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Static method to create cache from a file
+     *
+     * @param mixed $ref
+     * @param string $srcfile
+     */
+    public static function create_from_file($ref, $srcfile, $options = array()) {
+        $instance = cache_file::get_instance($options);
+        copy($srcfile, $instance->generate_filepath($ref));
+    }
+
+    /**
+     * Static method to create cache from url
+     *
+     * @param mixed $ref file reference
+     * @param string $url file url
+     */
+    public static function create_from_url($ref, $url, $options = array()) {
+        global $CFG;
+        $instance = cache_file::get_instance($options);
+        $fp = fopen($instance->generate_filepath($ref), 'w');
+        $curl = new curl;
+        $curl->download(array(array('url'=>$url, 'file'=>$fp)));
+        // Must close file handler
+        fclose($fp);
+    }
+
+    /**
+     * Static method to create cache from string
+     *
+     * @param mixed $ref file reference
+     * @param string $url file url
+     */
+    public static function create_from_string($ref, $string, $options = array()) {
+        global $CFG;
+        $instance = cache_file::get_instance($options);
+        $fp = fopen($instance->generate_filepath($ref), 'w');
+        fwrite($fp, $string);
+        // Must close file handler
+        fclose($fp);
+    }
+
+    /**
+     * Build path to cache file
+     *
+     * @param mixed $ref
+     * @return string
+     */
+    private function generate_filepath($ref) {
+        global $CFG;
+        $hash = sha1(serialize($ref));
+        $l1 = $hash[0].$hash[1];
+        $l2 = $hash[2].$hash[3];
+        $dir = $this->cachedir . "/$l1/$l2";
+        if (!file_exists($dir)) {
+            mkdir($dir, $CFG->directorypermissions, true);
+        }
+        return "$dir/$hash";
+    }
+
+    /**
+     * Remove cache files
+     *
+     * @param int $expire The number of seconds before expiry
+     */
+    public static function cleanup($expire) {
+        if ($dir = opendir($this->cachedir)) {
+            while (($file = readdir($dir)) !== false) {
+                if (!is_dir($file) && $file != '.' && $file != '..') {
+                    $lasttime = @filemtime($this->cachedir . $file);
+                    if(time() - $lasttime > $expire){
+                        @unlink($this->cachedir . $file);
+                    }
+                }
+            }
+            closedir($dir);
+        }
+    }
 }

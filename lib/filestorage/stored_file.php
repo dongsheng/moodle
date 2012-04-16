@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 require_once("$CFG->libdir/filestorage/stored_file.php");
+require_once("$CFG->dirroot/repository/lib.php");
 
 /**
  * Class representing local files stored in a sha1 file pool.
@@ -46,18 +47,73 @@ class stored_file {
     private $file_record;
     /** @var string location of content files */
     private $filedir;
+    /** @var repository */
+    public $repository;
 
     /**
      * Constructor, this constructor should be called ONLY from the file_storage class!
      *
+     * @global moodle_database $DB
      * @param file_storage $fs file  storage instance
      * @param stdClass $file_record description of file
      * @param string $filedir location of file directory with sh1 named content files
      */
     public function __construct(file_storage $fs, stdClass $file_record, $filedir) {
+        global $DB, $CFG;
         $this->fs          = $fs;
         $this->file_record = clone($file_record); // prevent modifications
         $this->filedir     = $filedir; // keep secret, do not expose!
+
+        if (!empty($file_record->repositoryid)) {
+            $this->repository = repository::get_repository_by_id($file_record->repositoryid, SYSCONTEXTID);
+            if ($this->repository->supported_returntypes() & FILE_REFERENCE != FILE_REFERENCE) {
+                // repository cannot do file reference
+                throw new moodle_exception('error');
+            }
+        } else {
+            $this->repository = null;
+        }
+    }
+
+    /**
+     * Whether or not this is a external resource
+     *
+     * @return bool
+     */
+    public function is_external_file() {
+        return !empty($this->repository);
+    }
+
+    /**
+     * Update some file record fields
+     *
+     * @param stdClass $dataobject
+     */
+    public function update($dataobject) {
+        global $DB;
+        foreach ($dataobject as $field=>$value) {
+            if (isset($this->file_record->$field)) {
+                $this->file_record->$field = $value;
+            } else {
+                throw new coding_exception("Invalid field name, $field doesn't exist in file record");
+            }
+        }
+        $DB->update_record('files', $this->file_record);
+    }
+
+    /**
+     * Delete file reference
+     *
+     */
+    public function delete_reference() {
+        global $DB;
+        // Remove repository info
+        $this->repository = null;
+        unset($this->file_record->repositoryid);
+        unset($this->file_record->reference);
+
+        // Remove reference info from DB
+        $DB->delete_records('files_reference', array('fileid'=>$this->file_record->id));
     }
 
     /**
@@ -84,6 +140,7 @@ class stored_file {
     public function delete() {
         global $DB;
         $DB->delete_records('files', array('id'=>$this->file_record->id));
+        $DB->delete_records('files_reference', array('fileid'=>$this->file_record->id));
         // moves pool file to trash if content not needed any more
         $this->fs->deleted_file_cleanup($this->file_record->contenthash);
         return true; // BC only
@@ -97,10 +154,15 @@ class stored_file {
      * @return string full path to pool file with file content
      **/
     protected function get_content_file_location() {
-        $contenthash = $this->file_record->contenthash;
-        $l1 = $contenthash[0].$contenthash[1];
-        $l2 = $contenthash[2].$contenthash[3];
-        return "$this->filedir/$l1/$l2/$contenthash";
+        if ($this->is_external_file()) {
+            throw new external_file_exception('externalfilenolocation');
+        } else {
+            // detect is local file or not
+            $contenthash = $this->file_record->contenthash;
+            $l1 = $contenthash[0].$contenthash[1];
+            $l2 = $contenthash[2].$contenthash[3];
+            return "$this->filedir/$l1/$l2/$contenthash";
+        }
     }
 
     /**
@@ -122,13 +184,17 @@ class stored_file {
      * @return resource file handle
      */
     public function get_content_file_handle() {
-        $path = $this->get_content_file_location();
-        if (!is_readable($path)) {
-            if (!$this->fs->try_content_recovery($this) or !is_readable($path)) {
-                throw new file_exception('storedfilecannotread', '', $path);
+        if ($this->is_external_file()) {
+            throw new external_file_exception('externalfilenolocation');
+        } else {
+            $path = $this->get_content_file_location();
+            if (!is_readable($path)) {
+                if (!$this->fs->try_content_recovery($this) or !is_readable($path)) {
+                    throw new file_exception('storedfilecannotread', '', $path);
+                }
             }
+            return fopen($path, 'rb'); //binary reading only!!
         }
-        return fopen($path, 'rb'); //binary reading only!!
     }
 
     /**
@@ -470,5 +536,27 @@ class stored_file {
      */
     public function get_sortorder() {
         return $this->file_record->sortorder;
+    }
+
+    /**
+     * Returns repository id
+     *
+     * @return int|null
+     */
+    public function get_repository_id() {
+        if (!empty($this->repository)) {
+            return $this->repository->id;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns file reference
+     *
+     * @return string
+     */
+    public function get_reference() {
+        return $this->file_record->reference;
     }
 }
