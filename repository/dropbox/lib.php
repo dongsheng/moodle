@@ -22,7 +22,6 @@
  * @copyright  2010 Dongsheng Cai {@link http://dongsheng.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 require_once($CFG->dirroot . '/repository/lib.php');
 require_once(dirname(__FILE__).'/locallib.php');
 
@@ -81,10 +80,20 @@ class repository_dropbox extends repository {
         $this->dropbox = new dropbox($args);
     }
 
+    /**
+     * Set access key
+     *
+     * @param string $access_key
+     */
     public function set_access_key($access_key) {
         $this->access_key = $access_key;
     }
 
+    /**
+     * Set access secret
+     *
+     * @param string $access_secret
+     */
     public function set_access_secret($access_secret) {
         $this->access_secret = $access_secret;
     }
@@ -385,7 +394,7 @@ class repository_dropbox extends repository {
 
         $cachedfilepath = cache_file::get($reference, array('ttl'=>20));
         if ($cachedfilepath === false) {
-            // re-fetch resource
+            // Re-fetch resource.
             $this->set_access_key($reference->access_key);
             $this->set_access_secret($reference->access_secret);
             $path = $this->get_file($reference->path);
@@ -408,7 +417,7 @@ class repository_dropbox extends repository {
 
             $cachedfile = cache_file::get($reference);
             if ($cachedfile === false) {
-                // re-fetch resource
+                // Re-fetch resource.
                 $reference = unserialize($reference);
                 $this->set_access_key($reference->access_key);
                 $this->set_access_secret($reference->access_secret);
@@ -419,6 +428,9 @@ class repository_dropbox extends repository {
     }
 }
 
+/**
+ * Dropbox plugin cron task
+ */
 function repository_dropbox_cron() {
     $instances = repository::get_instances(array('type'=>'dropbox'));
     foreach ($instances as $instance) {

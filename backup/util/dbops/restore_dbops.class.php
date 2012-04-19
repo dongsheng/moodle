@@ -1213,7 +1213,7 @@ abstract class restore_dbops {
     public static function set_backup_files_record($restoreid, $filerec) {
         global $DB;
 
-        // store external files info in `info` field
+        // Store external files info in `info` field
         $filerec->info     = base64_encode(serialize($filerec)); // Serialize the whole rec in info
         $filerec->backupid = $restoreid;
         $DB->insert_record('backup_files_temp', $filerec);

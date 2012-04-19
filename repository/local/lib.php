@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * This plugin is used to access local files
+ *
+ * @since 2.0
+ * @package    repository_local
+ * @copyright  2010 Dongsheng Cai {@link http://dongsheng.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 require_once($CFG->dirroot . '/repository/lib.php');
 
 /**
@@ -131,12 +139,12 @@ class repository_local extends repository {
             throw new repository_exception('invalidparams', 'repository');
         }
 
-        $filename  = is_null($params['filename'])  ? NULL : clean_param($params['filename'], PARAM_FILE);
-        $filepath  = is_null($params['filepath'])  ? NULL : clean_param($params['filepath'], PARAM_PATH);;
-        $component = is_null($params['component']) ? NULL : clean_param($params['component'], PARAM_COMPONENT);
-        $filearea  = is_null($params['filearea'])  ? NULL : clean_param($params['filearea'], PARAM_AREA);
-        $itemid    = is_null($params['itemid'])    ? NULL : clean_param($params['itemid'], PARAM_INT);
-        $contextid = is_null($params['contextid']) ? NULL : clean_param($params['contextid'], PARAM_INT);
+        $filename  = is_null($params['filename'])  ? null : clean_param($params['filename'], PARAM_FILE);
+        $filepath  = is_null($params['filepath'])  ? null : clean_param($params['filepath'], PARAM_PATH);;
+        $component = is_null($params['component']) ? null : clean_param($params['component'], PARAM_COMPONENT);
+        $filearea  = is_null($params['filearea'])  ? null : clean_param($params['filearea'], PARAM_AREA);
+        $itemid    = is_null($params['itemid'])    ? null : clean_param($params['itemid'], PARAM_INT);
+        $contextid = is_null($params['contextid']) ? null : clean_param($params['contextid'], PARAM_INT);
 
         $storedfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
 
@@ -171,12 +179,12 @@ class repository_local extends repository {
         $reference = $storedfile->get_reference();
         $params = unserialize(base64_decode($reference));
 
-        $filename  = is_null($params['filename'])  ? NULL : clean_param($params['filename'], PARAM_FILE);
-        $filepath  = is_null($params['filepath'])  ? NULL : clean_param($params['filepath'], PARAM_PATH);;
-        $component = is_null($params['component']) ? NULL : clean_param($params['component'], PARAM_COMPONENT);
-        $filearea  = is_null($params['filearea'])  ? NULL : clean_param($params['filearea'], PARAM_AREA);
-        $itemid    = is_null($params['itemid'])    ? NULL : clean_param($params['itemid'], PARAM_INT);
-        $contextid = is_null($params['contextid']) ? NULL : clean_param($params['contextid'], PARAM_INT);
+        $filename  = is_null($params['filename'])  ? null : clean_param($params['filename'], PARAM_FILE);
+        $filepath  = is_null($params['filepath'])  ? null : clean_param($params['filepath'], PARAM_PATH);;
+        $component = is_null($params['component']) ? null : clean_param($params['component'], PARAM_COMPONENT);
+        $filearea  = is_null($params['filearea'])  ? null : clean_param($params['filearea'], PARAM_AREA);
+        $itemid    = is_null($params['itemid'])    ? null : clean_param($params['itemid'], PARAM_INT);
+        $contextid = is_null($params['contextid']) ? null : clean_param($params['contextid'], PARAM_INT);
 
         $srcfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
 

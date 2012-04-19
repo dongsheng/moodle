@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * This plugin is used to access box.net repository
+ *
+ * @since 2.0
+ * @package    repository_boxnet
+ * @copyright  2010 Dongsheng Cai {@link http://dongsheng.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 require_once($CFG->dirroot . '/repository/lib.php');
 require_once($CFG->libdir . '/boxlib.php');
 
@@ -109,7 +117,6 @@ class repository_boxnet extends repository {
     /**
      * Search files from box.net
      *
-     * @global stdClass $OUTPUT
      * @param string $search_text
      * @return mixed
      */
@@ -207,6 +214,7 @@ class repository_boxnet extends repository {
      * Add Plugin settings input to Moodle form
      *
      * @param moodleform $mform
+     * @param string $classname
      */
     public static function type_config_form($mform, $classname = 'repository') {
         global $CFG;
@@ -254,7 +262,7 @@ class repository_boxnet extends repository {
      * @return string file referece
      */
     public function get_file_reference($source) {
-        // box.net returns a url
+        // Box.net returns a url.
         return $source;
     }
 
@@ -288,7 +296,7 @@ class repository_boxnet extends repository {
      */
     public function send_file($storedfile, $lifetime=86400 , $filter=0, $forcedownload=false, $filename=null, $dontdie=false) {
         $reference = $storedfile->get_reference();
-        // let box.net serve the file
+        // Let box.net serve the file.
         header('Location: ' . $reference);
     }
 }

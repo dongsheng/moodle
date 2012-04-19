@@ -15,13 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * This plugin is used to access user's private files
+ *
+ * @since 2.0
+ * @package    repository_user
+ * @copyright  2010 Dongsheng Cai {@link http://dongsheng.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 require_once($CFG->dirroot . '/repository/lib.php');
 
 /**
  * repository_user class is used to browse user private files
  *
  * @since     2.0
- * @package   repository
+ * @package   repository_user
  * @copyright 2010 Dongsheng Cai {@link http://dongsheng.org}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -149,8 +157,8 @@ class repository_user extends repository {
         }
         $context = get_context_instance(CONTEXT_USER, $USER->id);
 
-        // we store all file parameters, so file api could
-        // find the refernces later
+        // We store all file parameters, so file api could
+        // find the refernces later.
         $reference = array();
         $reference['contextid'] = $context->id;
         $reference['component'] = 'user';

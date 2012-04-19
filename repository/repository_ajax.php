@@ -32,7 +32,7 @@ require_once(dirname(__FILE__).'/lib.php');
 
 $err = new stdClass();
 
-/// Parameters
+// Parameters
 $action    = optional_param('action', '', PARAM_ALPHA);
 $repo_id   = optional_param('repo_id', 0, PARAM_INT);           // Repository ID
 $contextid = optional_param('ctx_id', SYSCONTEXTID, PARAM_INT); // Context ID
@@ -58,7 +58,7 @@ $PAGE->set_context($context);
 echo $OUTPUT->header(); // send headers
 @header('Content-type: text/html; charset=utf-8');
 
-// if uploaded file is larger than post_max_size (php.ini) setting, $_POST content will be empty
+// If uploaded file is larger than post_max_size (php.ini) setting, $_POST content will be empty.
 if (empty($_POST) && !empty($action)) {
     $err->error = get_string('errorpostmaxsize', 'repository');
     die(json_encode($err));
@@ -69,7 +69,7 @@ if (!confirm_sesskey()) {
     die(json_encode($err));
 }
 
-/// Get repository instance information
+// Get repository instance information
 $sql = 'SELECT i.name, i.typeid, r.type FROM {repository} r, {repository_instances} i WHERE i.id=? AND i.typeid=r.id';
 
 if (!$repository = $DB->get_record_sql($sql, array($repo_id))) {
@@ -79,7 +79,7 @@ if (!$repository = $DB->get_record_sql($sql, array($repo_id))) {
     $type = $repository->type;
 }
 
-/// Check permissions
+// Check permissions
 repository::check_capability($contextid, $repository);
 
 $moodle_maxbytes = get_max_upload_file_size();
@@ -88,7 +88,7 @@ if ($maxbytes == 0 || $maxbytes>=$moodle_maxbytes) {
     $maxbytes = $moodle_maxbytes;
 }
 
-/// Wait as long as it takes for this script to finish
+// Wait as long as it takes for this script to finish
 set_time_limit(0);
 
 // Early actions which need to be done before repository instances initialised
@@ -136,7 +136,7 @@ if (file_exists($CFG->dirroot.'/repository/'.$type.'/lib.php')) {
     die(json_encode($err));
 }
 
-/// These actions all occur on the currently active repository instance
+// These actions all occur on the currently active repository instance
 switch ($action) {
     case 'sign':
     case 'signin':
@@ -207,7 +207,7 @@ switch ($action) {
             die;
         } else {
             $fs = get_file_storage();
-            // some repository plugins are hosting moodle internal files, we cannot use get_file
+            // Some repository plugins are hosting moodle internal files, we cannot use get_file
             // method, so we use copy_to_area method
             // (local, user, coursefiles, recent)
             if ($repo->has_moodle_files() && ($usefilereference != 'yes')) {
@@ -219,9 +219,9 @@ switch ($action) {
                 if (($maxbytes !== -1) && ($filesize > $maxbytes)) {
                     throw new file_exception('maxbytes');
                 }
-                // if the moodle file is an alias to a file in external repository
+                // If the moodle file is an alias to a file in external repository
                 // we copy this alias instead of create alias to alias
-                // {@link repository::copy_to_area()}
+                // {@link repository::copy_to_area()}.
                 $fileinfo = $repo->copy_to_area($source, $itemid, $saveas_path, $saveas_filename);
 
                 if (!isset($fileinfo['event'])) {
@@ -232,13 +232,13 @@ switch ($action) {
                 die;
             }
 
-            // prepare file record
+            // Prepare file record.
             $record = new stdClass();
             $record->filepath = $saveas_path;
             $record->filename = $saveas_filename;
             $record->component = 'user';
             $record->filearea = 'draft';
-            if(!is_numeric($itemid)) {
+            if (!is_numeric($itemid)) {
                 $record->itemid = 0;
             } else {
                 $record->itemid   = $itemid;
@@ -269,12 +269,12 @@ switch ($action) {
 
             if ($usefilereference == 'yes') {
                 $reference = $repo->get_file_reference($source);
-                // Check if file exists
+                // Check if file exists.
                 if (repository::draftfile_exists($itemid, $saveas_path, $saveas_filename)) {
-                    // file name being used, rename it
+                    // File name being used, rename it.
                     $unused_filename = repository::get_unused_filename($itemid, $saveas_path, $saveas_filename);
                     $record->filename = $unused_filename;
-                    // create a file copy using unused filename
+                    // Create a file copy using unused filename.
                     $storedfile = $fs->create_file_from_reference($record, $repo_id, $reference);
 
                     $event = array();
@@ -294,7 +294,7 @@ switch ($action) {
                 $storedfile = $fs->create_file_from_reference($record, $repo_id, $reference);
                 // Repository plugin callback
                 // You can cache reository file in this callback
-                // or complete other tasks
+                // or complete other tasks.
                 $repo->cache_file_by_reference($reference, $storedfile);
                 $info = array(
                     'url'=>moodle_url::make_draftfile_url($storedfile->get_itemid(), $storedfile->get_filepath(), $storedfile->get_filename())->out(),
@@ -305,14 +305,14 @@ switch ($action) {
                 echo json_encode($info);
                 die;
             } else {
-                // Download file to moodle
+                // Download file to moodle.
                 $downloadedfile = $repo->get_file($source, $saveas_filename);
                 if ($downloadedfile['path'] === false) {
                     $err->error = get_string('cannotdownload', 'repository');
                     die(json_encode($err));
                 }
 
-                // check if exceed maxbytes
+                // Check if exceed maxbytes.
                 if (($maxbytes!==-1) && (filesize($file['path']) > $maxbytes)) {
                     throw new file_exception('maxbytes');
                 }

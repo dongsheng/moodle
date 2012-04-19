@@ -71,6 +71,12 @@ class dropbox extends oauth_helper {
         return array('path'=>$saveas, 'url'=>$url);
     }
 
+    /**
+     * Get file url
+     *
+     * @param string $filepath file path
+     * @return string file url
+     */
     public function get_file_url($filepath) {
         $info = pathinfo($filepath);
         $dirname = $info['dirname'];

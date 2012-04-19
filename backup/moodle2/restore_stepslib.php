@@ -598,7 +598,7 @@ class restore_load_included_files extends restore_structure_step {
         $isreference = !empty($data->repositoryid);
         $issamesite = $this->task->is_samesite();
 
-        // if it's not samesite, we skip file refernces
+        // If it's not samesite, we skip file refernces
         if (!$issamesite && $isreference) {
             return;
         }

@@ -73,7 +73,7 @@ class backup_file_manager {
 
         $fs = get_file_storage();
         $file = $fs->get_file_instance($filerecorid);
-        // if the file is external file, skip copying
+        // If the file is external file, skip copying.
         if ($file->is_external_file()) {
             return;
         }

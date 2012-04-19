@@ -65,7 +65,7 @@ class stored_file_creation_exception extends file_exception {
      * @param string $filename file name
      * @param string $debuginfo extra debug info
      */
-    function __construct($contextid, $component, $filearea, $itemid, $filepath, $filename, $debuginfo = NULL) {
+    function __construct($contextid, $component, $filearea, $itemid, $filepath, $filename, $debuginfo = null) {
         $a = new stdClass();
         $a->contextid = $contextid;
         $a->component = $component;
@@ -91,8 +91,8 @@ class file_access_exception extends file_exception {
      *
      * @param string $debuginfo extra debug info
      */
-    function __construct($debuginfo = NULL) {
-        parent::__construct('nopermissions', NULL, $debuginfo);
+    public function __construct($debuginfo = null) {
+        parent::__construct('nopermissions', null, $debuginfo);
     }
 }
 
@@ -111,7 +111,7 @@ class file_pool_content_exception extends file_exception {
      * @param string $contenthash content hash
      * @param string $debuginfo extra debug info
      */
-    function __construct($contenthash, $debuginfo = NULL) {
+    public function __construct($contenthash, $debuginfo = null) {
         parent::__construct('hashpoolproblem', $contenthash, $debuginfo);
     }
 }
@@ -132,7 +132,7 @@ class external_file_exception extends file_exception {
      * @param stdClass $a extra information
      * @param string   $debuginfo extra debug info
      */
-    function __construct($errorcode, $a=NULL, $debuginfo = NULL) {
+    public function __construct($errorcode, $a = null, $debuginfo = null) {
         parent::__construct($errorcode, '', '', $a, $debuginfo);
     }
 }

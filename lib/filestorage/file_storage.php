@@ -370,6 +370,7 @@ class file_storage {
      * Returns all files belonging to given repository
      *
      * @param int $repositoryid
+     * @param string $sort
      */
     public function get_external_files($repositoryid, $sort = 'sortorder, itemid, filepath, filename') {
         global $DB;
@@ -762,7 +763,7 @@ class file_storage {
             $fid = $fileorid;
         }
 
-        $filerecord = (array)$filerecord; // we support arrays too, do not modify the submitted record!
+        $filerecord = (array)$filerecord; // We support arrays too, do not modify the submitted record!
 
         unset($filerecord['id']);
         unset($filerecord['filesize']);
@@ -781,7 +782,7 @@ class file_storage {
 
         unset($newrecord->id);
 
-        foreach ($filerecord as $key=>$value) {
+        foreach ($filerecord as $key => $value) {
             // validate all parameters, we do not want any rubbish stored in database, right?
             if ($key == 'contextid' and (!is_number($value) or $value < 1)) {
                 throw new file_exception('storedfileproblem', 'Invalid contextid');
@@ -861,6 +862,7 @@ class file_storage {
                 $referencerecord->reference = $newrecord->reference;
                 $DB->insert_record('files_reference', $referencerecord);
             } catch (dml_exception $e) {
+                // Try to cache possible db exception
             }
         }
 
@@ -878,10 +880,10 @@ class file_storage {
      * @param bool $usetempfile use temporary file for download, may prevent out of memory problems
      * @return stored_file
      */
-    public function create_file_from_url($filerecord, $url, array $options = NULL, $usetempfile = false) {
+    public function create_file_from_url($filerecord, $url, array $options = null, $usetempfile = false) {
 
-        $filerecord = (array)$filerecord;  //do not modify the submitted record, this cast unlinks objects
-        $filerecord = (object)$filerecord; // we support arrays too
+        $filerecord = (array)$filerecord;  // Do not modify the submitted record, this cast unlinks objects.
+        $filerecord = (object)$filerecord; // We support arrays too.
 
         $headers        = isset($options['headers'])        ? $options['headers'] : null;
         $postdata       = isset($options['postdata'])       ? $options['postdata'] : null;
@@ -934,8 +936,8 @@ class file_storage {
     public function create_file_from_pathname($filerecord, $pathname) {
         global $DB;
 
-        $filerecord = (array)$filerecord;  //do not modify the submitted record, this cast unlinks objects
-        $filerecord = (object)$filerecord; // we support arrays too
+        $filerecord = (array)$filerecord;  // Do not modify the submitted record, this cast unlinks objects.
+        $filerecord = (object)$filerecord; // We support arrays too.
 
         // validate all parameters, we do not want any rubbish stored in database, right?
         if (!is_number($filerecord->contextid) or $filerecord->contextid < 1) {
@@ -1048,8 +1050,8 @@ class file_storage {
     public function create_file_from_string($filerecord, $content) {
         global $DB;
 
-        $filerecord = (array)$filerecord;  //do not modify the submitted record, this cast unlinks objects
-        $filerecord = (object)$filerecord; // we support arrays too
+        $filerecord = (array)$filerecord;  // Do not modify the submitted record, this cast unlinks objects.
+        $filerecord = (object)$filerecord; // We support arrays too.
 
         // validate all parameters, we do not want any rubbish stored in database, right?
         if (!is_number($filerecord->contextid) or $filerecord->contextid < 1) {
@@ -1164,8 +1166,8 @@ class file_storage {
     public function create_file_from_reference($filerecord, $repositoryid, $reference, $options = array()) {
         global $DB;
 
-        $filerecord = (array)$filerecord;  //do not modify the submitted record, this cast unlinks objects
-        $filerecord = (object)$filerecord; // we support arrays too
+        $filerecord = (array)$filerecord;  // Do not modify the submitted record, this cast unlinks objects.
+        $filerecord = (object)$filerecord; // We support arrays too.
 
         // validate all parameters, we do not want any rubbish stored in database, right?
         if (!is_number($filerecord->contextid) or $filerecord->contextid < 1) {
@@ -1196,13 +1198,13 @@ class file_storage {
 
         $filerecord->filepath = clean_param($filerecord->filepath, PARAM_PATH);
         if (strpos($filerecord->filepath, '/') !== 0 or strrpos($filerecord->filepath, '/') !== strlen($filerecord->filepath)-1) {
-            // path must start and end with '/'
+            // Path must start and end with '/'.
             throw new file_exception('storedfileproblem', 'Invalid file path');
         }
 
         $filerecord->filename = clean_param($filerecord->filename, PARAM_FILE);
         if ($filerecord->filename === '') {
-            // path must start and end with '/'
+            // Path must start and end with '/'.
             throw new file_exception('storedfileproblem', 'Invalid file name');
         }
 
@@ -1212,7 +1214,7 @@ class file_storage {
                 throw new file_exception('storedfileproblem', 'Invalid file timecreated');
             }
             if ($filerecord->timecreated < 0) {
-                //NOTE: unfortunately I make a mistake when creating the "files" table, we can not have negative numbers there, on the other hand no file should be older than 1970, right? (skodak)
+                // NOTE: unfortunately I make a mistake when creating the "files" table, we can not have negative numbers there, on the other hand no file should be older than 1970, right? (skodak)
                 $filerecord->timecreated = 0;
             }
         } else {
@@ -1224,7 +1226,7 @@ class file_storage {
                 throw new file_exception('storedfileproblem', 'Invalid file timemodified');
             }
             if ($filerecord->timemodified < 0) {
-                //NOTE: unfortunately I make a mistake when creating the "files" table, we can not have negative numbers there, on the other hand no file should be older than 1970, right? (skodak)
+                // NOTE: unfortunately I make a mistake when creating the "files" table, we can not have negative numbers there, on the other hand no file should be older than 1970, right? (skodak)
                 $filerecord->timemodified = 0;
             }
         } else {
@@ -1249,8 +1251,8 @@ class file_storage {
         $newrecord->license      = empty($filerecord->license) ? null : $filerecord->license;
         $newrecord->sortorder    = $filerecord->sortorder;
 
-        // external file doesn't have content in moodle
-        // so we create an empty file for it
+        // External file doesn't have content in moodle.
+        // So we create an empty file for it.
         list($newrecord->contenthash, $newrecord->filesize, $newfile) = $this->add_string_to_pool(null);
 
         $newrecord->pathnamehash = $this->get_pathname_hash($newrecord->contextid, $newrecord->component, $newrecord->filearea, $newrecord->itemid, $newrecord->filepath, $newrecord->filename);
@@ -1265,7 +1267,7 @@ class file_storage {
                                                     $newrecord->filepath, $newrecord->filename, $e->debuginfo);
         }
 
-        // insert file reference record
+        // Insert file reference record.
         try {
             $referencerecord = new stdClass;
             $referencerecord->fileid = $newrecord->id;
@@ -1292,7 +1294,7 @@ class file_storage {
      * @param int $quality depending on image type 0-100 for jpeg, 0-9 (0 means no compression) for png
      * @return stored_file
      */
-    public function convert_image($filerecord, $fid, $newwidth = NULL, $newheight = NULL, $keepaspectratio = true, $quality = NULL) {
+    public function convert_image($filerecord, $fid, $newwidth = null, $newheight = null, $keepaspectratio = true, $quality = null) {
         if (!function_exists('imagecreatefromstring')) {
             //Most likely the GD php extension isn't installed
             //image conversion cannot succeed
@@ -1303,9 +1305,9 @@ class file_storage {
             $fid = $fid->get_id();
         }
 
-        $filerecord = (array)$filerecord; // we support arrays too, do not modify the submitted record!
+        $filerecord = (array)$filerecord; // We support arrays too, do not modify the submitted record!
 
-        if (!$file = $this->get_file_by_id($fid)) { // make sure file really exists and we we correct data
+        if (!$file = $this->get_file_by_id($fid)) { // Make sure file really exists and we we correct data.
             throw new file_exception('storedfileproblem', 'File does not exist');
         }
 
@@ -1632,33 +1634,33 @@ class file_storage {
     /**
      * Convert file alias to local file
      *
-     * @param array|stored_file $files a list of stored_file instances
+     * @param stored_file $storedfile a stored_file instances
      * @return stored_file|bool stored_file or return false when fail
      */
     public function import_external_file($storedfile) {
         if (!$storedfile->is_external_file()) {
-            // ignored if not repository file
+            // Ignored if not repository file.
             return false;
         }
 
-        // download external files
+        // Download external files.
         $localfilepath = $storedfile->repository->get_file_by_reference($storedfile->get_reference(), $storedfile);
 
         if (is_null($localfilepath)) {
             return false;
         }
 
-        // adding downloaded file to moodle file pool
+        // Adding downloaded file to moodle file pool.
         list($contenthash, $filesize, $newfile) = $this->add_file_to_pool($localfilepath);
 
         $record = new stdClass;
         $record->contenthash = $contenthash;
         $record->filesize = $filesize;
 
-        // update file content hash and file size
+        // Update file content hash and file size.
         $storedfile->update($record);
 
-        // finally remove file reference
+        // Finally remove file reference.
         $storedfile->delete_reference();
         return $storedfile;
     }

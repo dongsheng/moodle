@@ -171,10 +171,10 @@ if (($action == 'edit') || ($action == 'new')) {
 
         // Display instances list and creation form
         if ($action == 'edit') {
-           $instanceoptionnames = repository::static_function($repository, 'get_instance_option_names');
-           if (!empty($instanceoptionnames)) {
-               repository::display_instances_list(context_system::instance(), $repository);
-           }
+            $instanceoptionnames = repository::static_function($repository, 'get_instance_option_names');
+            if (!empty($instanceoptionnames)) {
+                repository::display_instances_list(context_system::instance(), $repository);
+            }
         }
     }
 } else if ($action == 'show') {

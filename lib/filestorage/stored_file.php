@@ -53,7 +53,6 @@ class stored_file {
     /**
      * Constructor, this constructor should be called ONLY from the file_storage class!
      *
-     * @global moodle_database $DB
      * @param file_storage $fs file  storage instance
      * @param stdClass $file_record description of file
      * @param string $filedir location of file directory with sh1 named content files
@@ -67,7 +66,7 @@ class stored_file {
         if (!empty($file_record->repositoryid)) {
             $this->repository = repository::get_repository_by_id($file_record->repositoryid, SYSCONTEXTID);
             if ($this->repository->supported_returntypes() & FILE_REFERENCE != FILE_REFERENCE) {
-                // repository cannot do file reference
+                // Repository cannot do file reference.
                 throw new moodle_exception('error');
             }
         } else {
@@ -91,7 +90,7 @@ class stored_file {
      */
     public function update($dataobject) {
         global $DB;
-        foreach ($dataobject as $field=>$value) {
+        foreach ($dataobject as $field => $value) {
             if (isset($this->file_record->$field)) {
                 $this->file_record->$field = $value;
             } else {
@@ -107,12 +106,12 @@ class stored_file {
      */
     public function delete_reference() {
         global $DB;
-        // Remove repository info
+        // Remove repository info.
         $this->repository = null;
         unset($this->file_record->repositoryid);
         unset($this->file_record->reference);
 
-        // Remove reference info from DB
+        // Remove reference info from DB.
         $DB->delete_records('files_reference', array('fileid'=>$this->file_record->id));
     }
 
@@ -157,7 +156,7 @@ class stored_file {
         if ($this->is_external_file()) {
             throw new external_file_exception('externalfilenolocation');
         } else {
-            // detect is local file or not
+            // Detect is local file or not.
             $contenthash = $this->file_record->contenthash;
             $l1 = $contenthash[0].$contenthash[1];
             $l2 = $contenthash[2].$contenthash[3];
@@ -193,7 +192,7 @@ class stored_file {
                     throw new file_exception('storedfilecannotread', '', $path);
                 }
             }
-            return fopen($path, 'rb'); //binary reading only!!
+            return fopen($path, 'rb'); // Binary reading only!!
         }
     }
 

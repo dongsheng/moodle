@@ -89,7 +89,7 @@ class repository_type {
      */
     private $_sortorder;
 
-     /**
+    /**
      * Return if the instance is visible in a context
      *
      * @todo check if the context visibility has been overwritten by the plugin creator
@@ -117,7 +117,6 @@ class repository_type {
     /**
      * repository_type constructor
      *
-     * @global stdClass $CFG
      * @param int $typename
      * @param array $typeoptions
      * @param bool $visible
@@ -207,12 +206,8 @@ class repository_type {
 
     /**
      * Create a repository type (the type name must not already exist)
-     * @param boolean throw exception?
+     * @param bool $silent throw exception?
      * @return mixed return int if create successfully, return false if
-     *         any errors
-     * @global moodle_database $DB
-     * @param bool $silent
-     * @return bool
      */
     public function create($silent = false) {
         global $DB;
@@ -322,7 +317,6 @@ class repository_type {
      * This function is private.
      * For public access, have a look to switch_and_update_visibility()
      *
-     * @global moodle_database $DB
      * @param bool $visible
      * @return bool
      */
@@ -345,7 +339,6 @@ class repository_type {
      * This function is private.
      * For public access, have a look to move_order()
      *
-     * @global moodle_database $DB
      * @param int $sortorder
      * @return bool
      */
@@ -372,7 +365,6 @@ class repository_type {
      * and the array keys start from 0 to X (incremented by 1)
      * 2. switch sortorder values of this type and its adjacent type
      *
-     * @global moodle_database $DB
      * @param string $move "up" or "down"
      */
     public function move_order($move) {
@@ -380,7 +372,7 @@ class repository_type {
 
         $types = repository::get_types();    // retrieve all types
 
-    /// retrieve this type into the returned array
+        // retrieve this type into the returned array
         $i = 0;
         while (!isset($indice) && $i<count($types)) {
             if ($types[$i]->get_typename() == $this->_typename) {
@@ -389,7 +381,7 @@ class repository_type {
             $i++;
         }
 
-    /// retrieve adjacent indice
+        // retrieve adjacent indice
         switch ($move) {
             case "up":
                 $adjacentindice = $indice - 1;
@@ -432,7 +424,6 @@ class repository_type {
      * Delete a repository_type (general options are removed from config_plugin
      * table, and all instances are deleted)
      *
-     * @global moodle_database $DB
      * @param bool $downloadcontents download external contents if exist
      * @return bool
      */
@@ -479,7 +470,7 @@ abstract class repository {
     // example: self::$disabled = true
     /** @var bool force disable repository instance */
     public $disabled = false;
-    /** @version int repository instance id */
+    /** @var int repository instance id */
     public $id;
     /** @var stdClass current context */
     public $context;
@@ -495,8 +486,9 @@ abstract class repository {
      * Constructor
      *
      * @param int $repositoryid repository instance id
-     * @param int|stdClass a context id or context object
+     * @param int|stdClass $context a context id or context object
      * @param array $options repository options
+     * @param int $readonly indicate this repo is readonly or not
      */
     public function __construct($repositoryid, $context = SYSCONTEXTID, $options = array(), $readonly = 0) {
         global $DB;
@@ -511,7 +503,7 @@ abstract class repository {
         $this->options = array();
 
         if (is_array($options)) {
-            // get_option will get stored options in database
+            // The get_option() method will get stored options in database.
             $options = array_merge($this->get_option(), $options);
         } else {
             $options = $this->get_option();
@@ -559,7 +551,6 @@ abstract class repository {
      * Get a repository type object by a given type name.
      *
      * @static
-     * @global moodle_database $DB
      * @param string $typename the repository type name
      * @return repository_type|bool
      */
@@ -577,7 +568,6 @@ abstract class repository {
      * Get the repository type by a given repository type id.
      *
      * @static
-     * @global moodle_database $DB
      * @param int $id the type id
      * @return object
      */
@@ -596,8 +586,6 @@ abstract class repository {
      * first repository type in returnedarray[0], second repository type in returnedarray[1], ...
      *
      * @static
-     * @global moodle_database $DB
-     * @global stdClass $CFG
      * @param bool $visible can return types by visiblity, return all types if null
      * @return array Repository types
      */
@@ -624,8 +612,8 @@ abstract class repository {
      * To check if the context id is valid
      *
      * @static
-     * @global stdClass $USER
      * @param int $contextid
+     * @param stdClass $instance
      * @return bool
      */
     public static function check_capability($contextid, $instance) {
@@ -659,12 +647,10 @@ abstract class repository {
     /**
      * This function is used to copy a moodle file to draft area
      *
-     * @global stdClass $USER
-     * @global moodle_database $DB
      * @param string $encoded The metainfo of file, it is base64 encoded php serialized data
      * @param int $draftitemid itemid
-     * @param string $new_filename The intended name of file
      * @param string $new_filepath the new path in draft area
+     * @param string $new_filename The intended name of file
      * @return array The information of file
      */
     public function copy_to_area($encoded, $draftitemid, $new_filepath, $new_filename) {
@@ -783,9 +769,6 @@ abstract class repository {
      * Return repository instances
      *
      * @static
-     * @global moodle_database $DB
-     * @global stdClass $CFG
-     * @global stdClass $USER
      * @param array $args Array containing the following keys:
      *           currentcontext
      *           context
@@ -941,8 +924,6 @@ abstract class repository {
      * Get single repository instance
      *
      * @static
-     * @global object $DB
-     * @global object $CFG
      * @param integer $id repository id
      * @return object repository instance
      */
@@ -972,7 +953,6 @@ abstract class repository {
      * Call a static function. Any additional arguments than plugin and function will be passed through.
      *
      * @static
-     * @global stdClass $CFG
      * @param string $plugin repository plugin name
      * @param string $function funciton name
      * @return mixed
@@ -1014,7 +994,6 @@ abstract class repository {
      * permissions of the file are not modified here!
      *
      * @static
-     * @global stdClass $CFG
      * @param string $thefile
      * @param string $filename name of the file
      * @param bool $deleteinfected
@@ -1125,10 +1104,6 @@ abstract class repository {
      *
      * @todo MDL-28637
      * @static
-     * @global moodle_database $DB
-     * @global stdClass $CFG
-     * @global stdClass $USER
-     * @global core_renderer $OUTPUT
      * @param string $thefile file path in download folder
      * @param stdClass $record
      * @return array containing the following keys:
@@ -1144,12 +1119,12 @@ abstract class repository {
         self::antivir_scan_file($thefile, $record->filename, empty($CFG->repository_no_delete)); //TODO: MDL-28637 this repository_no_delete is a bloody hack!
 
         $fs = get_file_storage();
-        // if file name being used
+        // If file name being used.
         if (repository::draftfile_exists($record->itemid, $record->filepath, $record->filename)) {
             $draftitemid = $record->itemid;
             $new_filename = repository::get_unused_filename($draftitemid, $record->filepath, $record->filename);
             $old_filename = $record->filename;
-            // create a tmp file
+            // Create a tmp file.
             $record->filename = $new_filename;
             $newfile = $fs->create_file_from_pathname($record, $thefile);
             $event = array();
@@ -1186,10 +1161,10 @@ abstract class repository {
      *
      * @static
      * @todo take $search into account, and respect a threshold for dynamic loading
-     * @param $fileinfo an object returned by file_browser::get_file_info()
-     * @param $search searched string
-     * @param $dynamicmode bool no recursive call is done when in dynamic mode
-     * @param $list - the array containing the files under the passed $fileinfo
+     * @param file_info $fileinfo an object returned by file_browser::get_file_info()
+     * @param string $search searched string
+     * @param bool $dynamicmode no recursive call is done when in dynamic mode
+     * @param array $list the array containing the files under the passed $fileinfo
      * @returns int the number of files found
      *
      */
@@ -1271,9 +1246,6 @@ abstract class repository {
      * Display a repository instance list (with edit/delete/create links)
      *
      * @static
-     * @global stdClass $CFG
-     * @global stdClass $USER
-     * @global core_renderer $OUTPUT
      * @param stdClass $context the context for which we display the instance
      * @param string $typename if set, we display only one type of instance
      */
@@ -1405,8 +1377,8 @@ abstract class repository {
     /**
      * Decide where to save the file, can be overwriten by subclass
      *
-     * @param string filename
-     * @return string file path
+     * @param string $filename file name
+     * @return file path
      */
     public function prepare_file($filename) {
         global $CFG;
@@ -1447,10 +1419,8 @@ abstract class repository {
     }
 
     /**
-     * Download a file, this function can be overridden by subclass.
+     * Download a file, this function can be overridden by subclass. {@link curl}
      *
-     * @see curl
-     * @global stdClass $CFG
      * @param string $url the url of file
      * @param string $filename save location
      * @return string the location of the file
@@ -1461,7 +1431,7 @@ abstract class repository {
         $fp = fopen($path, 'w');
         $c = new curl;
         $c->download(array(array('url'=>$url, 'file'=>$fp)));
-        // close file handler
+        // Close file handler.
         fclose($fp);
         return array('path'=>$path, 'url'=>$url);
     }
@@ -1514,7 +1484,6 @@ abstract class repository {
     /**
      * Return the name of this instance, can be overridden.
      *
-     * @global moodle_database $DB
      * @return string
      */
     public function get_name() {
@@ -1549,8 +1518,6 @@ abstract class repository {
     /**
      * Provide repository instance information for Ajax
      *
-     * @global stdClass $CFG
-     * @global core_renderer $OUTPUT
      * @return stdClass
      */
     final public function get_meta() {
@@ -1571,8 +1538,6 @@ abstract class repository {
      * Create an instance for this plug-in
      *
      * @static
-     * @global stdClass $CFG
-     * @global moodle_database $DB
      * @param string $type the type of the repository
      * @param int $userid the user id
      * @param stdClass $context the context
@@ -1623,7 +1588,6 @@ abstract class repository {
     /**
      * delete a repository instance
      *
-     * @global moodle_database $DB
      * @param bool $downloadcontents
      * @return bool
      */
@@ -1644,7 +1608,6 @@ abstract class repository {
     /**
      * Hide/Show a repository
      *
-     * @global moodle_database $DB
      * @param string $hide
      * @return bool
      */
@@ -1673,7 +1636,6 @@ abstract class repository {
      * Save settings for repository instance
      * $repo->set_option(array('api_key'=>'f2188bde132', 'name'=>'dongsheng'));
      *
-     * @global moodle_database $DB
      * @param array $options settings
      * @return bool
      */
@@ -1704,7 +1666,6 @@ abstract class repository {
     /**
      * Get settings for repository instance
      *
-     * @global moodle_database $DB
      * @param string $config
      * @return array Settings
      */
@@ -1729,6 +1690,12 @@ abstract class repository {
         }
     }
 
+    /**
+     * Filter file listing to display specific types
+     *
+     * @param array $value
+     * @return bool
+     */
     public function filter(&$value) {
         $pass = false;
         $accepted_types = optional_param_array('accepted_types', '', PARAM_RAW);
@@ -1766,8 +1733,8 @@ abstract class repository {
      *
      * See details on {@link http://docs.moodle.org/dev/Repository_plugins}
      *
-     * @param string $path, this parameter can a folder name, or a identification of folder
-     * @param string $page, the page number of file list
+     * @param string $path this parameter can a folder name, or a identification of folder
+     * @param string $page the page number of file list
      * @return array the list of files, including meta infomation, containing the following keys
      *           manage, url to manage url
      *           client_id
@@ -1789,7 +1756,8 @@ abstract class repository {
     /**
      * Search files in repository.
      *
-     * @param string $search_text
+     * @param string $search_text search key word
+     * @param int $page page
      * @return mixed {@see repository::get_listing}
      */
     public function search($search_text, $page = 0) {
@@ -1897,8 +1865,8 @@ abstract class repository {
      *
      * @static
      * @param moodleform $mform Moodle form (passed by reference)
-     * @param array array of ("fieldname"=>value) of submitted data
-     * @param array array of ("fieldname"=>errormessage) of errors
+     * @param array $data array of ("fieldname"=>value) of submitted data
+     * @param array $errors array of ("fieldname"=>errormessage) of errors
      * @return array array of errors
      */
     public static function type_form_validation($mform, $data, $errors) {
@@ -1934,10 +1902,25 @@ abstract class repository {
         return array();
     }
 
+    /**
+     * Validate repository plugin instance form
+     *
+     * @param moodleform $mform moodle form
+     * @param array $data form data
+     * @param array $errors errors
+     * @return array errors
+     */
     public static function instance_form_validation($mform, $data, $errors) {
         return $errors;
     }
 
+    /**
+     * Create a shorten filename
+     *
+     * @param string $str filename
+     * @param int $maxlength max file name length
+     * @return string short filename
+     */
     public function get_short_filename($str, $maxlength) {
         if (textlib::strlen($str) >= $maxlength) {
             return trim(textlib::substr($str, 0, $maxlength)).'...';
@@ -1994,6 +1977,9 @@ abstract class repository {
         }
     }
 
+    /**
+     * Find all external files in this repo and import them
+     */
     public function convert_references_to_local() {
         $fs = get_file_storage();
         $files = $fs->get_external_files($this->id);
@@ -2025,8 +2011,14 @@ class repository_exception extends moodle_exception {
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class repository_instance_form extends moodleform {
+    /** @var stdClass repository instance */
     protected $instance;
+    /** @var string repository plugin type */
     protected $plugin;
+
+    /**
+     * Added defaults to moodle form
+     */
     protected function add_defaults() {
         $mform =& $this->_form;
         $strrequired = get_string('required');
@@ -2046,6 +2038,9 @@ final class repository_instance_form extends moodleform {
         $mform->addRule('name', $strrequired, 'required', null, 'client');
     }
 
+    /**
+     * Define moodle form elements
+     */
     public function definition() {
         global $CFG;
         // type of plugin, string
@@ -2092,6 +2087,13 @@ final class repository_instance_form extends moodleform {
         }
     }
 
+    /**
+     * Validate moodle form data
+     *
+     * @param array $data form data
+     * @param array $files files in form
+     * @return array errors
+     */
     public function validation($data, $files) {
         global $DB;
         $errors = array();
@@ -2126,13 +2128,15 @@ final class repository_instance_form extends moodleform {
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class repository_type_form extends moodleform {
+    /** @var stdClass repository instance */
     protected $instance;
+    /** @var string repository plugin name */
     protected $plugin;
+    /** @var string action */
     protected $action;
 
     /**
      * Definition of the moodleform
-     * @global stdClass $CFG
      */
     public function definition() {
         global $CFG;
@@ -2228,7 +2232,7 @@ final class repository_type_form extends moodleform {
 /**
  * Generate all options needed by filepicker
  *
- * @param array $args, including following keys
+ * @param array $args including following keys
  *          context
  *          accepted_types
  *          return_types

@@ -424,16 +424,16 @@ function xmldb_main_upgrade($oldversion) {
 
     if ($oldversion < 2012042700.01) {
 
-        // Define table files_reference to be created
+        // Define table files_reference to be created.
         $table = new xmldb_table('files_reference');
 
-        // Adding fields to table files_reference
+        // Adding fields to table files_reference.
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('fileid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
         $table->add_field('repositoryid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
         $table->add_field('reference', XMLDB_TYPE_TEXT, null, null, null, null, null);
 
-        // Adding keys to table files_reference
+        // Adding keys to table files_reference.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
 
         // Adding indexes to table files_reference
