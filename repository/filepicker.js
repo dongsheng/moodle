@@ -630,11 +630,12 @@ M.core_filepicker.init = function(Y, options) {
             } else if (returntypes == 4) {
                 html += '<input type="checkbox" id="filereference-'+client_id+'" style="display:none" value="checked" checked />';
             } else {
-                if ((returntypes & 1) == 1) {
+                if (((returntypes & 1) == 1) && ((this.options.return_types & 1) == 1)) {
                     // support external links
                     html += '<tr><td></td><td class="mdl-left"><input type="checkbox" id="linkexternal-'+client_id+'" value="" />'+M.str.repository.linkexternal+'</td></tr>';
                 }
-                if ((returntypes & 4) == 4) {
+                // form element support file reference and repository support it too
+                if (((returntypes & 4) == 4) && ((this.options.return_types & 4) == 4)) {
                     // file reference
                     html += '<tr><td></td><td class="mdl-left"><input type="checkbox" id="filereference-'+client_id+'" value="" />'+M.str.repository.uselatestfile+'</td></tr>';
                 }

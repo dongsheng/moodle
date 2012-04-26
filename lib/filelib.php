@@ -2021,7 +2021,7 @@ function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownl
 
     // handle external resource
     if ($stored_file->is_external_file()) {
-        $stored_file->repository->send_file($stored_file, $lifetime, $filter, $forcedownload, $filename, $dontdie);
+        $stored_file->send_file($lifetime, $filter, $forcedownload, $filename, $dontdie);
         die;
     }
 
@@ -4109,10 +4109,13 @@ class cache_file {
      * @param mixed $ref
      * @param string $srcfile
      * @param array $options
+     * @return string cached file path
      */
     public static function create_from_file($ref, $srcfile, $options = array()) {
         $instance = self::get_instance($options);
-        copy($srcfile, $instance->generate_filepath($ref));
+        $cachedfilepath = $instance->generate_filepath($ref);
+        copy($srcfile, $cachedfilepath);
+        return $cachedfilepath;
     }
 
     /**
@@ -4121,15 +4124,18 @@ class cache_file {
      * @param mixed $ref file reference
      * @param string $url file url
      * @param array $options options
+     * @return string cached file path
      */
     public static function create_from_url($ref, $url, $options = array()) {
         global $CFG;
         $instance = self::get_instance($options);
-        $fp = fopen($instance->generate_filepath($ref), 'w');
+        $cachedfilepath = $instance->generate_filepath($ref);
+        $fp = fopen($cachedfilepath, 'w');
         $curl = new curl;
         $curl->download(array(array('url'=>$url, 'file'=>$fp)));
         // Must close file handler.
         fclose($fp);
+        return $cachedfilepath;
     }
 
     /**
@@ -4138,14 +4144,17 @@ class cache_file {
      * @param mixed $ref file reference
      * @param string $url file url
      * @param array $options options
+     * @return string cached file path
      */
     public static function create_from_string($ref, $string, $options = array()) {
         global $CFG;
         $instance = self::get_instance($options);
-        $fp = fopen($instance->generate_filepath($ref), 'w');
+        $cachedfilepath = $instance->generate_filepath($ref);
+        $fp = fopen($cachedfilepath, 'w');
         fwrite($fp, $string);
         // Must close file handler.
         fclose($fp);
+        return $cachedfilepath;
     }
 
     /**

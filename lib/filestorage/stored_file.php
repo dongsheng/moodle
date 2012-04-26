@@ -154,7 +154,8 @@ class stored_file {
      **/
     protected function get_content_file_location() {
         if ($this->is_external_file()) {
-            throw new external_file_exception('externalfilenolocation');
+            $filepath = $this->repository->get_file_by_reference($this->get_reference(), $this);
+            return $filepath;
         } else {
             // Detect is local file or not.
             $contenthash = $this->file_record->contenthash;
@@ -183,17 +184,13 @@ class stored_file {
      * @return resource file handle
      */
     public function get_content_file_handle() {
-        if ($this->is_external_file()) {
-            throw new external_file_exception('externalfilenolocation');
-        } else {
-            $path = $this->get_content_file_location();
-            if (!is_readable($path)) {
-                if (!$this->fs->try_content_recovery($this) or !is_readable($path)) {
-                    throw new file_exception('storedfilecannotread', '', $path);
-                }
+        $path = $this->get_content_file_location();
+        if (!is_readable($path)) {
+            if (!$this->fs->try_content_recovery($this) or !is_readable($path)) {
+                throw new file_exception('storedfilecannotread', '', $path);
             }
-            return fopen($path, 'rb'); // Binary reading only!!
         }
+        return fopen($path, 'rb'); // Binary reading only!!
     }
 
     /**
@@ -557,5 +554,19 @@ class stored_file {
      */
     public function get_reference() {
         return $this->file_record->reference;
+    }
+
+    /**
+     * Send file references
+     *
+     * @param int $lifetime Number of seconds before the file should expire from caches (default 24 hours)
+     * @param int $filter 0 (default)=no filtering, 1=all files, 2=html files only
+     * @param bool $forcedownload If true (default false), forces download of file rather than view in browser/plugin
+     * @param string $filename Override filename
+     * @param bool $dontdie - return control to caller afterwards. this is not recommended and only used for cleanup tasks.
+     *
+     */
+    public function send_file($lifetime, $filter, $forcedownload, $filename, $dontdie) {
+        $this->repository->send_file($this, $lifetime, $filter, $forcedownload, $filename, $dontdie);
     }
 }

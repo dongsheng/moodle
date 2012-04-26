@@ -277,8 +277,8 @@ class repository_boxnet extends repository {
      * @return string
      */
     public function get_file_by_reference($reference, $storedfile) {
-        list($path, $url) = $this->get_file($reference);
-        return $path;
+        $info = $this->get_file($reference);
+        return $info['path'];
     }
 
     /**

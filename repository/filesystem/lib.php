@@ -257,6 +257,6 @@ class repository_filesystem extends repository {
         } else {
             $file = $this->root_path.$reference;
         }
-        send_file($file, $storedfile->get_filename(), 'default' , $filter, false, $forcedownload);
+        send_file($file, $storedfile->get_filename(), 'default' , $filter, false, $forcedownload, '', $dontdie);
     }
 }
