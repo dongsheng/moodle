@@ -2021,7 +2021,7 @@ function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownl
 
     // handle external resource
     if ($stored_file->is_external_file()) {
-        $stored_file->send_file($lifetime, $filter, $forcedownload, $filename, $dontdie);
+        $stored_file->send_file($lifetime, $filter, $forcedownload, $options);
         die;
     }
 
@@ -4181,7 +4181,7 @@ class cache_file {
      * @param array $options options
      * @param int $expire The number of seconds before expiry
      */
-    public static function cleanup($options, $expire) {
+    public static function cleanup($options = array(), $expire) {
         global $CFG;
         $instance = self::get_instance($options);
         if ($dir = opendir($instance->cachedir)) {

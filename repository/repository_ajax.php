@@ -269,6 +269,8 @@ switch ($action) {
 
             if ($usefilereference == 'yes') {
                 $reference = $repo->get_file_reference($source);
+                // get reference life time from repo
+                $record->referencelifetime = $repo->get_reference_file_lifetime($reference);
                 // Check if file exists.
                 if (repository::draftfile_exists($itemid, $saveas_path, $saveas_filename)) {
                     // File name being used, rename it.

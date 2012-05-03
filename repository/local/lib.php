@@ -161,19 +161,43 @@ class repository_local extends repository {
     }
 
     /**
+     * Get file from external repository by reference
+     * {@link repository::get_file_reference()}
+     * {@link repository::get_file()}
+     *
+     * @param stdClass $reference file reference db record
+     * @return stdClass|null|false
+     */
+    public function get_file_by_reference($reference) {
+        $ref = $reference->reference;
+        $params = unserialize(base64_decode($ref));
+        if (!is_array($params)) {
+            throw new repository_exception('invalidparams', 'repository');
+        }
+        $filename  = is_null($params['filename'])  ? null : clean_param($params['filename'], PARAM_FILE);
+        $filepath  = is_null($params['filepath'])  ? null : clean_param($params['filepath'], PARAM_PATH);;
+        $component = is_null($params['component']) ? null : clean_param($params['component'], PARAM_COMPONENT);
+        $filearea  = is_null($params['filearea'])  ? null : clean_param($params['filearea'], PARAM_AREA);
+        $itemid    = is_null($params['itemid'])    ? null : clean_param($params['itemid'], PARAM_INT);
+        $contextid = is_null($params['contextid']) ? null : clean_param($params['contextid'], PARAM_INT);
+        $storedfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
+
+        $fileinfo = new stdClass;
+        $fileinfo->contenthash = $storedfile->get_contenthash();
+        $fileinfo->filesize    = $storedfile->get_filesize();
+        return $fileinfo;
+    }
+
+    /**
      * Repository method to serve file
      *
      * @param stored_file $storedfile
      * @param int $lifetime Number of seconds before the file should expire from caches (default 24 hours)
      * @param int $filter 0 (default)=no filtering, 1=all files, 2=html files only
      * @param bool $forcedownload If true (default false), forces download of file rather than view in browser/plugin
-     * @param string $filename Override filename
-     * @param bool $dontdie - return control to caller afterwards. this is not recommended and only used for cleanup tasks.
-     *                        if this is passed as true, ignore_user_abort is called.  if you don't want your processing to continue on cancel,
-     *                        you must detect this case when control is returned using connection_aborted. Please not that session is closed
-     *                        and should not be reopened.
+     * @param array $options additional options affecting the file serving
      */
-    public function send_file($storedfile, $lifetime=86400 , $filter=0, $forcedownload=false, $filename=null, $dontdie=false) {
+    public function send_file($storedfile, $lifetime=86400 , $filter=0, $forcedownload=false, array $options = null) {
         $fs = get_file_storage();
 
         $reference = $storedfile->get_reference();
@@ -188,7 +212,7 @@ class repository_local extends repository {
 
         $srcfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
 
-        send_stored_file($srcfile, $lifetime, $filter, $forcedownload, $filename, $dontdie);
+        send_stored_file($srcfile, $lifetime, $filter, $forcedownload, $options);
     }
 }
 

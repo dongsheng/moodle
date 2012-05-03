@@ -149,11 +149,7 @@ class file_storage {
      * @return stored_file instance of file abstraction class
      */
     public function get_file_instance(stdClass $filerecord) {
-        try {
-            $storedfile = new stored_file($this, $filerecord, $this->filedir);
-        } catch (repository_exception $ex) {
-            return false;
-        }
+        $storedfile = new stored_file($this, $filerecord, $this->filedir);
         return $storedfile;
     }
 
@@ -279,7 +275,7 @@ class file_storage {
         $sql = "SELECT f.*, r.repositoryid, r.reference
                   FROM {files} f
              LEFT JOIN {files_reference} r
-                       ON f.id = r.fileid
+                       ON f.referencefileid = r.id
                  WHERE f.id = ?";
         if ($filerecord = $DB->get_record_sql($sql, array($fileid))) {
             return $this->get_file_instance($filerecord);
@@ -300,7 +296,7 @@ class file_storage {
         $sql = "SELECT f.*, r.repositoryid, r.reference
                   FROM {files} f
              LEFT JOIN {files_reference} r
-                       ON f.id = r.fileid
+                       ON f.referencefileid = r.id
                  WHERE f.pathnamehash = ?";
         if ($filerecord = $DB->get_record_sql($sql, array($pathnamehash))) {
             return $this->get_file_instance($filerecord);
@@ -377,7 +373,7 @@ class file_storage {
         $sql = "SELECT f.*, r.repositoryid, r.reference
                   FROM {files} f
              LEFT JOIN {files_reference} r
-                       ON f.id = r.fileid
+                       ON f.referencefileid = r.id
                  WHERE r.repositoryid = ?
               ORDER BY $sort";
 
@@ -414,7 +410,7 @@ class file_storage {
         $sql = "SELECT f.*, r.repositoryid, r.reference
                   FROM {files} f
              LEFT JOIN {files_reference} r
-                       ON f.id = r.fileid
+                       ON f.referencefileid = r.id
                  WHERE f.contextid = :contextid
                        AND f.component = :component
                        AND f.filearea = :filearea
@@ -773,7 +769,7 @@ class file_storage {
         $sql = "SELECT f.*, r.repositoryid, r.reference
                   FROM {files} f
              LEFT JOIN {files_reference} r
-                       ON f.id = r.fileid
+                       ON f.referencefileid = r.id
                  WHERE f.id = ?";
 
         if (!$newrecord = $DB->get_record_sql($sql, array($fid))) {
@@ -833,6 +829,10 @@ class file_storage {
                 }
             }
 
+            if ($key == 'referencefileid' or $key == 'referencelastsync' or $key == 'referencelifetime') {
+                $value = clean_param($value, PARAM_INT);
+            }
+
             $newrecord->$key = $value;
         }
 
@@ -847,24 +847,27 @@ class file_storage {
             return $this->get_file_instance($newrecord);
         }
 
+        if (!empty($newrecord->repositoryid)) {
+            try {
+                $referencerecord = new stdClass;
+                $referencerecord->repositoryid = $newrecord->repositoryid;
+                $referencerecord->reference = $newrecord->reference;
+                $referencerecord->lastsync  = $newrecord->referencelastsync;
+                $referencerecord->lifetime  = $newrecord->referencelifetime;
+                $referencerecord->id = $DB->insert_record('files_reference', $referencerecord);
+            } catch (dml_exception $e) {
+                // Try to cache possible db exception
+            }
+        }
+
         try {
+            $newrecord->referencefileid = $referencerecord->id;
             $newrecord->id = $DB->insert_record('files', $newrecord);
         } catch (dml_exception $e) {
             throw new stored_file_creation_exception($newrecord->contextid, $newrecord->component, $newrecord->filearea, $newrecord->itemid,
                                                      $newrecord->filepath, $newrecord->filename, $e->debuginfo);
         }
 
-        if (!empty($newrecord->repositoryid)) {
-            try {
-                $referencerecord = new stdClass;
-                $referencerecord->fileid = $newrecord->id;
-                $referencerecord->repositoryid = $newrecord->repositoryid;
-                $referencerecord->reference = $newrecord->reference;
-                $DB->insert_record('files_reference', $referencerecord);
-            } catch (dml_exception $e) {
-                // Try to cache possible db exception
-            }
-        }
 
         $this->create_directory($newrecord->contextid, $newrecord->component, $newrecord->filearea, $newrecord->itemid, $newrecord->filepath, $newrecord->userid);
 
@@ -965,6 +968,10 @@ class file_storage {
         } else {
             $filerecord->sortorder = 0;
         }
+
+        $filerecord->referencefileid   = !isset($filerecord->referencefileid) ? 0 : $filerecord->referencefileid;
+        $filerecord->referencelastsync = !isset($filerecord->referencelastsync) ? 0 : $filerecord->referencelastsync;
+        $filerecord->referencelifetime = !isset($filerecord->referencelifetime) ? 0 : $filerecord->referencelifetime;
 
         $filerecord->filepath = clean_param($filerecord->filepath, PARAM_PATH);
         if (strpos($filerecord->filepath, '/') !== 0 or strrpos($filerecord->filepath, '/') !== strlen($filerecord->filepath)-1) {
@@ -1079,6 +1086,9 @@ class file_storage {
         } else {
             $filerecord->sortorder = 0;
         }
+        $filerecord->referencefileid   = !isset($filerecord->referencefileid) ? 0 : $filerecord->referencefileid;
+        $filerecord->referencelastsync = !isset($filerecord->referencelastsync) ? 0 : $filerecord->referencelastsync;
+        $filerecord->referencelifetime = !isset($filerecord->referencelifetime) ? 0 : $filerecord->referencelifetime;
 
         $filerecord->filepath = clean_param($filerecord->filepath, PARAM_PATH);
         if (strpos($filerecord->filepath, '/') !== 0 or strrpos($filerecord->filepath, '/') !== strlen($filerecord->filepath)-1) {
@@ -1196,7 +1206,15 @@ class file_storage {
             $filerecord->sortorder = 0;
         }
 
-        $filerecord->filepath = clean_param($filerecord->filepath, PARAM_PATH);
+        $filerecord->referencefileid   = empty($filerecord->referencefileid) ? 0 : $filerecord->referencefileid;
+        $filerecord->referencelastsync = empty($filerecord->referencelastsync) ? 0 : $filerecord->referencelastsync;
+        $filerecord->referencelifetime = empty($filerecord->referencelifetime) ? 0 : $filerecord->referencelifetime;
+        $filerecord->mimetype          = empty($filerecord->mimetype) ? mimeinfo('type', $filerecord->filename) : $filerecord->mimetype;
+        $filerecord->userid            = empty($filerecord->userid) ? null : $filerecord->userid;
+        $filerecord->source            = empty($filerecord->source) ? null : $filerecord->source;
+        $filerecord->author            = empty($filerecord->author) ? null : $filerecord->author;
+        $filerecord->license           = empty($filerecord->license) ? null : $filerecord->license;
+        $filerecord->filepath          = clean_param($filerecord->filepath, PARAM_PATH);
         if (strpos($filerecord->filepath, '/') !== 0 or strrpos($filerecord->filepath, '/') !== strlen($filerecord->filepath)-1) {
             // Path must start and end with '/'.
             throw new file_exception('storedfileproblem', 'Invalid file path');
@@ -1233,54 +1251,39 @@ class file_storage {
             $filerecord->timemodified = $now;
         }
 
-        $newrecord = new stdClass();
-
-        $newrecord->contextid = $filerecord->contextid;
-        $newrecord->component = $filerecord->component;
-        $newrecord->filearea  = $filerecord->filearea;
-        $newrecord->itemid    = $filerecord->itemid;
-        $newrecord->filepath  = $filerecord->filepath;
-        $newrecord->filename  = $filerecord->filename;
-
-        $newrecord->timecreated  = $filerecord->timecreated;
-        $newrecord->timemodified = $filerecord->timemodified;
-        $newrecord->mimetype     = empty($filerecord->mimetype) ? mimeinfo('type', $filerecord->filename) : $filerecord->mimetype;
-        $newrecord->userid       = empty($filerecord->userid) ? null : $filerecord->userid;
-        $newrecord->source       = empty($filerecord->source) ? null : $filerecord->source;
-        $newrecord->author       = empty($filerecord->author) ? null : $filerecord->author;
-        $newrecord->license      = empty($filerecord->license) ? null : $filerecord->license;
-        $newrecord->sortorder    = $filerecord->sortorder;
-
-        // External file doesn't have content in moodle.
-        // So we create an empty file for it.
-        list($newrecord->contenthash, $newrecord->filesize, $newfile) = $this->add_string_to_pool(null);
-
-        $newrecord->pathnamehash = $this->get_pathname_hash($newrecord->contextid, $newrecord->component, $newrecord->filearea, $newrecord->itemid, $newrecord->filepath, $newrecord->filename);
-
-        try {
-            $newrecord->id = $DB->insert_record('files', $newrecord);
-        } catch (dml_exception $e) {
-            if ($newfile) {
-                $this->deleted_file_cleanup($newrecord->contenthash);
-            }
-            throw new stored_file_creation_exception($newrecord->contextid, $newrecord->component, $newrecord->filearea, $newrecord->itemid,
-                                                    $newrecord->filepath, $newrecord->filename, $e->debuginfo);
-        }
-
         // Insert file reference record.
         try {
             $referencerecord = new stdClass;
-            $referencerecord->fileid = $newrecord->id;
             $referencerecord->repositoryid = $repositoryid;
             $referencerecord->reference = $reference;
+            $referencerecord->lastsync = $filerecord->referencelastsync;
+            $referencerecord->lifetime = $filerecord->referencelifetime;
             $referencerecord->id = $DB->insert_record('files_reference', $referencerecord);
         } catch (dml_exception $e) {
             throw $e;
         }
 
-        $this->create_directory($newrecord->contextid, $newrecord->component, $newrecord->filearea, $newrecord->itemid, $newrecord->filepath, $newrecord->userid);
+        $filerecord->referencefileid = $referencerecord->id;
 
-        return $this->get_file_instance($newrecord);
+        // External file doesn't have content in moodle.
+        // So we create an empty file for it.
+        list($filerecord->contenthash, $filerecord->filesize, $newfile) = $this->add_string_to_pool(null);
+
+        $filerecord->pathnamehash = $this->get_pathname_hash($filerecord->contextid, $filerecord->component, $filerecord->filearea, $filerecord->itemid, $filerecord->filepath, $filerecord->filename);
+
+        try {
+            $filerecord->id = $DB->insert_record('files', $filerecord);
+        } catch (dml_exception $e) {
+            if ($newfile) {
+                $this->deleted_file_cleanup($filerecord->contenthash);
+            }
+            throw new stored_file_creation_exception($filerecord->contextid, $filerecord->component, $filerecord->filearea, $filerecord->itemid,
+                                                    $filerecord->filepath, $filerecord->filename, $e->debuginfo);
+        }
+
+        $this->create_directory($filerecord->contextid, $filerecord->component, $filerecord->filearea, $filerecord->itemid, $filerecord->filepath, $filerecord->userid);
+
+        return $this->get_file_instance($filerecord);
     }
 
     /**
@@ -1638,13 +1641,18 @@ class file_storage {
      * @return stored_file|bool stored_file or return false when fail
      */
     public function import_external_file($storedfile) {
+        global $DB;
         if (!$storedfile->is_external_file()) {
             // Ignored if not repository file.
             return false;
         }
 
+        if (!$reference = $DB->get_record('files_reference', array('id'=>$storedfile->get_referencefileid()))) {
+            return false;
+        }
+
         // Download external files.
-        $localfilepath = $storedfile->repository->get_file_by_reference($storedfile->get_reference(), $storedfile);
+        $localfilepath = $storedfile->repository->get_file_by_reference($reference);
 
         if (is_null($localfilepath)) {
             return false;

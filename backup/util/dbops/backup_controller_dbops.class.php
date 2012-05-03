@@ -421,7 +421,7 @@ abstract class backup_controller_dbops extends backup_dbops {
         $sql = "SELECT count(r.repositoryid)
                   FROM {files} f
                   JOIN {files_reference} r
-                       ON r.fileid = f.id
+                       ON r.id = f.referencefileid
                   JOIN {backup_ids_temp} bi
                        ON f.id = bi.itemid
                  WHERE bi.backupid = ?

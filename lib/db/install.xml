@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="lib/db" VERSION="20120424" COMMENT="XMLDB file for core Moodle tables"
+<XMLDB PATH="lib/db" VERSION="20120502" COMMENT="XMLDB file for core Moodle tables"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../lib/xmldb/xmldb.xsd"
 >
@@ -2308,7 +2308,7 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="primary key of the table, please edit me"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="files" COMMENT="description of files, content is stored in sha1 file pool" PREVIOUS="message_working" NEXT="repository">
+    <TABLE NAME="files" COMMENT="description of files, content is stored in sha1 file pool" PREVIOUS="message_working" NEXT="files_reference">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="contenthash"/>
         <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="sha1 hash of file content" PREVIOUS="id" NEXT="pathnamehash"/>
@@ -2328,12 +2328,16 @@
         <FIELD NAME="license" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="license of the file to guide reuse" PREVIOUS="author" NEXT="timecreated"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" PREVIOUS="license" NEXT="timemodified"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" PREVIOUS="timecreated" NEXT="sortorder"/>
-        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="order of files" PREVIOUS="timemodified"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="order of files" PREVIOUS="timemodified" NEXT="referencefileid"/>
+        <FIELD NAME="referencefileid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Use to indicate file is a proxy for repository file" PREVIOUS="sortorder" NEXT="referencelastsync"/>
+        <FIELD NAME="referencelastsync" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Last time the proxy file was synced with repository, defined for performance reasons" PREVIOUS="referencefileid" NEXT="referencelifetime"/>
+        <FIELD NAME="referencelifetime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="How often do we have to sync proxy file with repository, defined for performance reasons" PREVIOUS="referencelastsync"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="contextid"/>
         <KEY NAME="contextid" TYPE="foreign" FIELDS="contextid" REFTABLE="context" REFFIELDS="id" PREVIOUS="primary" NEXT="userid"/>
-        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" PREVIOUS="contextid"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" PREVIOUS="contextid" NEXT="referencefileid"/>
+        <KEY NAME="referencefileid" TYPE="foreign" FIELDS="referencefileid" REFTABLE="files_reference" REFFIELDS="id" PREVIOUS="userid"/>
       </KEYS>
       <INDEXES>
         <INDEX NAME="component-filearea-contextid-itemid" UNIQUE="false" FIELDS="component, filearea, contextid, itemid" NEXT="contenthash"/>
@@ -2341,7 +2345,20 @@
         <INDEX NAME="pathnamehash" UNIQUE="true" FIELDS="pathnamehash" PREVIOUS="contenthash"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="repository" COMMENT="This table contains one entry for every configured external repository instance." PREVIOUS="files" NEXT="repository_instances">
+    <TABLE NAME="files_reference" COMMENT="Store files references" PREVIOUS="files" NEXT="repository">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="repositoryid"/>
+        <FIELD NAME="repositoryid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="lastsync"/>
+        <FIELD NAME="lastsync" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Last time the proxy file was synced with repository" PREVIOUS="repositoryid" NEXT="lifetime"/>
+        <FIELD NAME="lifetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="How often do we have to sync proxy file with repository" PREVIOUS="lastsync" NEXT="reference"/>
+        <FIELD NAME="reference" TYPE="text" NOTNULL="false" SEQUENCE="false" PREVIOUS="lifetime"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="repositoryid"/>
+        <KEY NAME="repositoryid" TYPE="foreign" FIELDS="repositoryid" REFTABLE="repository_instances" REFFIELDS="id" PREVIOUS="primary"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="repository" COMMENT="This table contains one entry for every configured external repository instance." PREVIOUS="files_reference" NEXT="repository_instances">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="type"/>
         <FIELD NAME="type" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="visible"/>
@@ -2813,7 +2830,7 @@
         <KEY NAME="fk_usercreated" TYPE="foreign" FIELDS="usercreated" REFTABLE="user" REFFIELDS="id" PREVIOUS="uq_area_method"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="grading_instances" COMMENT="Grading form instance is an assessment record for one gradable item assessed by one rater" PREVIOUS="grading_definitions" NEXT="files_reference">
+    <TABLE NAME="grading_instances" COMMENT="Grading form instance is an assessment record for one gradable item assessed by one rater" PREVIOUS="grading_definitions">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="definitionid"/>
         <FIELD NAME="definitionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the form definition this is instance of" PREVIOUS="id" NEXT="raterid"/>
@@ -2830,20 +2847,6 @@
         <KEY NAME="fk_definitionid" TYPE="foreign" FIELDS="definitionid" REFTABLE="grading_definitions" REFFIELDS="id" PREVIOUS="primary" NEXT="fk_raterid"/>
         <KEY NAME="fk_raterid" TYPE="foreign" FIELDS="raterid" REFTABLE="user" REFFIELDS="id" PREVIOUS="fk_definitionid"/>
       </KEYS>
-    </TABLE>
-    <TABLE NAME="files_reference" COMMENT="Store files references" PREVIOUS="grading_instances">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="fileid"/>
-        <FIELD NAME="fileid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="repositoryid"/>
-        <FIELD NAME="repositoryid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" PREVIOUS="fileid" NEXT="reference"/>
-        <FIELD NAME="reference" TYPE="text" NOTNULL="false" SEQUENCE="false" PREVIOUS="repositoryid"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-      </KEYS>
-      <INDEXES>
-        <INDEX NAME="fileid" UNIQUE="true" FIELDS="fileid" COMMENT="fileid should be unique"/>
-      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

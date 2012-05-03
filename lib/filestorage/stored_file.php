@@ -47,7 +47,7 @@ class stored_file {
     private $file_record;
     /** @var string location of content files */
     private $filedir;
-    /** @var repository */
+    /** @var repository repository plugin instance */
     public $repository;
 
     /**
@@ -112,7 +112,7 @@ class stored_file {
         unset($this->file_record->reference);
 
         // Remove reference info from DB.
-        $DB->delete_records('files_reference', array('fileid'=>$this->file_record->id));
+        $DB->delete_records('files_reference', array('id'=>$this->file_record->referencefileid));
     }
 
     /**
@@ -139,7 +139,7 @@ class stored_file {
     public function delete() {
         global $DB;
         $DB->delete_records('files', array('id'=>$this->file_record->id));
-        $DB->delete_records('files_reference', array('fileid'=>$this->file_record->id));
+        $DB->delete_records('files_reference', array('id'=>$this->file_record->referencefileid));
         // moves pool file to trash if content not needed any more
         $this->fs->deleted_file_cleanup($this->file_record->contenthash);
         return true; // BC only
@@ -153,16 +153,13 @@ class stored_file {
      * @return string full path to pool file with file content
      **/
     protected function get_content_file_location() {
-        if ($this->is_external_file()) {
-            $filepath = $this->repository->get_file_by_reference($this->get_reference(), $this);
-            return $filepath;
-        } else {
-            // Detect is local file or not.
-            $contenthash = $this->file_record->contenthash;
-            $l1 = $contenthash[0].$contenthash[1];
-            $l2 = $contenthash[2].$contenthash[3];
-            return "$this->filedir/$l1/$l2/$contenthash";
-        }
+        $this->sync_external_file();
+        // Detect is local file or not.
+        $contenthash = $this->file_record->contenthash;
+        $l1 = $contenthash[0].$contenthash[1];
+        $l2 = $contenthash[2].$contenthash[3];
+        $path  = "$this->filedir/$l1/$l2/$contenthash";
+        return "$this->filedir/$l1/$l2/$contenthash";
     }
 
     /**
@@ -362,7 +359,28 @@ class stored_file {
     }
 
     /**
-     * Returns context id of the file-
+     * Sync external files
+     *
+     * @return bool true if file content changed, false if not
+     */
+    public function sync_external_file() {
+        global $CFG, $DB;
+        if (empty($this->file_record->referencefileid)) {
+            return false;
+        }
+        if (empty($this->file_record->referencelastsync) or ($this->file_record->referencelastsync + $this->file_record->referencelifetime < time())) {
+            require_once($CFG->dirroot.'/repository/lib.php');
+            if (repository::sync_external_file($this)) {
+                $prevcontent = $this->file_record->contenthash;
+                $this->file_record = $DB->get_record('files', array('id'=>$this->file_record->id), '*', MUST_EXIST);
+                return ($prevcontent !== $this->file_record->contenthash);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns context id of the file
      *
      * @return int context id
      */
@@ -432,6 +450,7 @@ class stored_file {
      * @return int bytes
      */
     public function get_filesize() {
+        $this->sync_external_file();
         return $this->file_record->filesize;
     }
 
@@ -459,6 +478,7 @@ class stored_file {
      * @return int
      */
     public function get_timemodified() {
+        $this->sync_external_file();
         return $this->file_record->timemodified;
     }
 
@@ -548,6 +568,29 @@ class stored_file {
     }
 
     /**
+     * get reference file id
+     * @return int
+     */
+    public function get_referencefileid() {
+        return $this->file_record->referencefileid;
+    }
+
+    /**
+     * Get reference last sync time
+     * @return int
+     */
+    public function get_referencelastsync() {
+        return $this->file_record->referencelastsync;
+    }
+
+    /**
+     * Get reference last sync time
+     * @return int
+     */
+    public function get_referencelifetime() {
+        return $this->file_record->referencelifetime;
+    }
+    /**
      * Returns file reference
      *
      * @return string
@@ -562,11 +605,9 @@ class stored_file {
      * @param int $lifetime Number of seconds before the file should expire from caches (default 24 hours)
      * @param int $filter 0 (default)=no filtering, 1=all files, 2=html files only
      * @param bool $forcedownload If true (default false), forces download of file rather than view in browser/plugin
-     * @param string $filename Override filename
-     * @param bool $dontdie - return control to caller afterwards. this is not recommended and only used for cleanup tasks.
-     *
+     * @param array $options additional options affecting the file serving
      */
-    public function send_file($lifetime, $filter, $forcedownload, $filename, $dontdie) {
-        $this->repository->send_file($this, $lifetime, $filter, $forcedownload, $filename, $dontdie);
+    public function send_file($lifetime, $filter, $forcedownload, $options) {
+        $this->repository->send_file($this, $lifetime, $filter, $forcedownload, $options);
     }
 }
