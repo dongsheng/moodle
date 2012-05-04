@@ -90,8 +90,9 @@ class stored_file {
      */
     public function update($dataobject) {
         global $DB;
+        $keys = array_keys((array)$this->file_record);
         foreach ($dataobject as $field => $value) {
-            if (isset($this->file_record->$field)) {
+            if (in_array($field, $keys)) {
                 $this->file_record->$field = $value;
             } else {
                 throw new coding_exception("Invalid field name, $field doesn't exist in file record");
