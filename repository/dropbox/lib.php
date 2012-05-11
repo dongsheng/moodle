@@ -401,6 +401,18 @@ class repository_dropbox extends repository {
         cache_file::create_from_file($reference, $path['path']);
     }
 
+    /**
+     * Return human readable reference information
+     * {@link stored_file::get_reference()}
+     *
+     * @param string $reference
+     * @return string|null
+     */
+    public function get_reference_details($reference) {
+        $ref  = unserialize($reference);
+        // Indicate this is from dropbox with path
+        return $this->get_name() . ': ' . $ref->path;
+    }
 
     /**
      * Repository method to serve file

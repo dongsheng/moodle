@@ -275,9 +275,22 @@ class repository_boxnet extends repository {
      * @return stdClass|null|false
      */
     public function get_file_by_reference($reference) {
-        $fileinfo = new stdClas;
-        $fileinfo->filepath = $this->get_file($reference->reference);
+        $fileinfo = new stdClass;
+        $boxnetfile = $this->get_file($reference->reference);
+        $fileinfo->filepath = $boxnetfile['path'];
         return $fileinfo;
+    }
+
+    /**
+     * Return human readable reference information
+     * {@link stored_file::get_reference()}
+     *
+     * @param string $reference
+     * @return string|null
+     */
+    public function get_reference_details($reference) {
+        // Indicate it's from box.net repository + secure URL
+        return $this->get_name() . ': ' . $reference;
     }
 
     /**

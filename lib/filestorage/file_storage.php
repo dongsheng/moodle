@@ -856,12 +856,13 @@ class file_storage {
                 $referencerecord->lifetime  = $newrecord->referencelifetime;
                 $referencerecord->id = $DB->insert_record('files_reference', $referencerecord);
             } catch (dml_exception $e) {
-                // Try to cache possible db exception
+                throw new stored_file_creation_exception($newrecord->contextid, $newrecord->component, $newrecord->filearea, $newrecord->itemid,
+                                                         $newrecord->filepath, $newrecord->filename, $e->debuginfo);
             }
+            $newrecord->referencefileid = $referencerecord->id;
         }
 
         try {
-            $newrecord->referencefileid = $referencerecord->id;
             $newrecord->id = $DB->insert_record('files', $newrecord);
         } catch (dml_exception $e) {
             throw new stored_file_creation_exception($newrecord->contextid, $newrecord->component, $newrecord->filearea, $newrecord->itemid,
@@ -1283,6 +1284,9 @@ class file_storage {
 
         $this->create_directory($filerecord->contextid, $filerecord->component, $filerecord->filearea, $filerecord->itemid, $filerecord->filepath, $filerecord->userid);
 
+        // Adding repositoryid and reference to file record to create stored_file instance
+        $filerecord->repositoryid = $repositoryid;
+        $filerecord->reference = $reference;
         return $this->get_file_instance($filerecord);
     }
 
@@ -1510,6 +1514,18 @@ class file_storage {
     }
 
     /**
+     * Content exists
+     *
+     * @param string $contenthash
+     * @return bool
+     */
+    public function content_exists($contenthash) {
+        $dir = $this->path_from_hash($contenthash);
+        $filepath = $dir . '/' . $contenthash;
+        return file_exists($filepath);
+    }
+
+    /**
      * Return path to file with given hash.
      *
      * NOTE: must not be public, files in pool must not be modified
@@ -1593,16 +1609,86 @@ class file_storage {
         chmod($trashfile, $this->filepermissions); // fix permissions if needed
     }
 
+    /**
+     * When user referring to a moodle file, we build the reference field
+     *
+     * @param array $params
+     * @return string
+     */
+    public static function pack_reference($params) {
+        $params = (array)$params;
+        $reference = array();
+        $reference['contextid'] = is_null($params['contextid']) ? null : clean_param($params['contextid'], PARAM_INT);
+        $reference['component'] = is_null($params['component']) ? null : clean_param($params['component'], PARAM_COMPONENT);
+        $reference['itemid']    = is_null($params['itemid'])    ? null : clean_param($params['itemid'],    PARAM_INT);
+        $reference['filearea']  = is_null($params['filearea'])  ? null : clean_param($params['filearea'],  PARAM_AREA);
+        $reference['filepath']  = is_null($params['filepath'])  ? null : clean_param($params['filepath'],  PARAM_PATH);;
+        $reference['filename']  = is_null($params['filename'])  ? null : clean_param($params['filename'],  PARAM_FILE);
+        return base64_encode(serialize($reference));
+    }
+
+    /**
+     * Unpack reference field
+     *
+     * @param string $str
+     * @return array
+     */
+    public static function unpack_reference($str) {
+        return unserialize(base64_decode($str));
+    }
+
+    /**
+     * Search references by providing reference content
+     *
+     * @param string $str
+     * @return array
+     */
+    public function search_references($str) {
+        global $DB;
+        $sql = "SELECT f.*, r.repositoryid, r.reference
+                  FROM {files} f
+             LEFT JOIN {files_reference} r
+                       ON f.referencefileid = r.id
+                 WHERE r.reference = ?";
+
+        $rs = $DB->get_recordset_sql($sql, array($str));
+        $files = array();
+        foreach ($rs as $filerecord) {
+            $file = $this->get_file_instance($filerecord);
+            if ($file->is_external_file()) {
+                $files[$filerecord->pathnamehash] = $file;
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * Search references count by providing reference content
+     *
+     * @param string $str
+     * @return int
+     */
+    public function search_references_count($str) {
+        global $DB;
+        $sql = "SELECT COUNT(f.id)
+                  FROM {files} f
+             LEFT JOIN {files_reference} r
+                       ON f.referencefileid = r.id
+                 WHERE r.reference = ?";
+
+        $count = $DB->count_records_sql($sql, array($str));
+        return $count;
+    }
 
     /**
      * Return all files referring to provided stored_file instance
-     *
-     * It's used by if moodle internal files being used by other places
+     * This won't work for draft files
      *
      * @param stored_file $storedfile
      * @return array
      */
-    public function get_references($storedfile) {
+    public function get_references_by_storedfile($storedfile) {
         global $DB;
 
         $params = array();
@@ -1614,18 +1700,18 @@ class file_storage {
         $params['filepath']  = $storedfile->get_filepath();
         $params['userid']    = $storedfile->get_userid();
 
-        $reference = base64_encode(serialize($reference));
+        $reference = self::pack_reference($params);
 
         $sql = "SELECT f.*, r.repositoryid, r.reference
                   FROM {files} f
              LEFT JOIN {files_reference} r
-                       ON f.id = r.fileid
+                       ON f.referencefileid = r.id
                  WHERE r.reference = ?";
 
-        $rs = $DB->get_recordset_sql($sql);
+        $rs = $DB->get_recordset_sql($sql, array($reference));
         $files = array();
         foreach ($rs as $filerecord) {
-            $file = $fs->get_file_instance($filerecord);
+            $file = $this->get_file_instance($filerecord);
             if ($file->is_external_file()) {
                 $files[$filerecord->pathnamehash] = $file;
             }
@@ -1635,42 +1721,53 @@ class file_storage {
     }
 
     /**
+     * Return the count files referring to provided stored_file instance
+     * This won't work for draft files
+     *
+     * @param stored_file $storedfile
+     * @return int
+     */
+    public function get_references_count_by_storedfile($storedfile) {
+        global $DB;
+
+        $params = array();
+        $params['contextid'] = $storedfile->get_contextid();
+        $params['component'] = $storedfile->get_component();
+        $params['filearea']  = $storedfile->get_filearea();
+        $params['itemid']    = $storedfile->get_itemid();
+        $params['filename']  = $storedfile->get_filename();
+        $params['filepath']  = $storedfile->get_filepath();
+        $params['userid']    = $storedfile->get_userid();
+
+        $reference = self::pack_reference($params);
+
+        $sql = "SELECT COUNT(f.id)
+                  FROM {files} f
+             LEFT JOIN {files_reference} r
+                       ON f.referencefileid = r.id
+                 WHERE r.reference = ?";
+
+        $count = $DB->count_records_sql($sql, array($reference));
+        return $count;
+    }
+
+    /**
      * Convert file alias to local file
      *
      * @param stored_file $storedfile a stored_file instances
      * @return stored_file|bool stored_file or return false when fail
      */
     public function import_external_file($storedfile) {
-        global $DB;
-        if (!$storedfile->is_external_file()) {
-            // Ignored if not repository file.
+        global $CFG;
+        require_once($CFG->dirroot.'/repository/lib.php');
+        // sync external file
+        if (repository::sync_external_file($storedfile)) {
+            // Remove file references
+            $storedfile->delete_reference();
+            return $storedfile;
+        } else {
             return false;
         }
-
-        if (!$reference = $DB->get_record('files_reference', array('id'=>$storedfile->get_referencefileid()))) {
-            return false;
-        }
-
-        // Download external files.
-        $localfilepath = $storedfile->repository->get_file_by_reference($reference);
-
-        if (is_null($localfilepath)) {
-            return false;
-        }
-
-        // Adding downloaded file to moodle file pool.
-        list($contenthash, $filesize, $newfile) = $this->add_file_to_pool($localfilepath);
-
-        $record = new stdClass;
-        $record->contenthash = $contenthash;
-        $record->filesize = $filesize;
-
-        // Update file content hash and file size.
-        $storedfile->update($record);
-
-        // Finally remove file reference.
-        $storedfile->delete_reference();
-        return $storedfile;
     }
 
     /**

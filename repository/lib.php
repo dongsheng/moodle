@@ -1080,6 +1080,27 @@ abstract class repository {
     }
 
     /**
+     * Decide whether or not the file should be synced
+     *
+     * @param stored_file $storedfile
+     * @return bool
+     */
+    public function sync_individual_file(stored_file $storedfile) {
+        return true;
+    }
+
+    /**
+     * Return human readable reference information
+     * {@link stored_file::get_reference()}
+     *
+     * @param string $reference
+     * @return string|null
+     */
+    public function get_reference_details($reference) {
+        return null;
+    }
+
+    /**
      * Cache file from external repository by reference
      * {@link repository::get_file_reference()}
      * {@link repository::get_file()}
@@ -2001,7 +2022,7 @@ abstract class repository {
      * @param stored_file $file
      * @return bool success
      */
-    function sync_external_file(stored_file $file) {
+    public static function sync_external_file(stored_file $file) {
         global $DB;
 
         $fs = get_file_storage();
@@ -2015,6 +2036,10 @@ abstract class repository {
         }
 
         if (!$repository = self::get_repository_by_id($reference->repositoryid, SYSCONTEXTID)) {
+            return false;
+        }
+
+        if (!$repository->sync_individual_file($file)) {
             return false;
         }
 
@@ -2034,11 +2059,14 @@ abstract class repository {
         $contenthash = null;
         $filesize = null;
         if (!empty($fileinfo->contenthash)) {
+            // contenthash returned, file already in moodle
             $contenthash = $fileinfo->contenthash;
             $filesize = $fileinfo->filesize;
         } else if (!empty($fileinfo->filepath)) {
+            // File path returned
             list($contenthash, $filesize, $newfile) = $fs->add_file_to_pool($fileinfo->filepath);
-        } else if (is_resource($fileinfo->handle)) {
+        } else if (!empty($fileinfo->handle) && is_resource($fileinfo->handle)) {
+            // File handle returned
             $contents = '';
             while (!feof($fileinfo->handle)) {
                 $contents .= fread($handle, 8192);
@@ -2046,6 +2074,7 @@ abstract class repository {
             fclose($fileinfo->handle);
             list($contenthash, $filesize, $newfile) = $fs->add_string_to_pool($content);
         } else if (isset($fileinfo->content)) {
+            // File content returned
             list($contenthash, $filesize, $newfile) = $fs->add_string_to_pool($fileinfo->content);
         }
 

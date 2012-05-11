@@ -85,20 +85,98 @@ class stored_file {
 
     /**
      * Update some file record fields
+     * NOTE: Must remain protected
      *
      * @param stdClass $dataobject
      */
-    public function update($dataobject) {
+    protected function update($dataobject) {
         global $DB;
         $keys = array_keys((array)$this->file_record);
         foreach ($dataobject as $field => $value) {
             if (in_array($field, $keys)) {
+                if ($field == 'contextid' and (!is_number($value) or $value < 1)) {
+                    throw new file_exception('storedfileproblem', 'Invalid contextid');
+                }
+
+                if ($field == 'component') {
+                    $value = clean_param($value, PARAM_COMPONENT);
+                    if (empty($value)) {
+                        throw new file_exception('storedfileproblem', 'Invalid component');
+                    }
+                }
+
+                if ($field == 'filearea') {
+                    $value = clean_param($value, PARAM_AREA);
+                    if (empty($value)) {
+                        throw new file_exception('storedfileproblem', 'Invalid filearea');
+                    }
+                }
+
+                if ($field == 'itemid' and (!is_number($value) or $value < 0)) {
+                    throw new file_exception('storedfileproblem', 'Invalid itemid');
+                }
+
+
+                if ($field == 'filepath') {
+                    $value = clean_param($value, PARAM_PATH);
+                    if (strpos($value, '/') !== 0 or strrpos($value, '/') !== strlen($value)-1) {
+                        // path must start and end with '/'
+                        throw new file_exception('storedfileproblem', 'Invalid file path');
+                    }
+                }
+
+                if ($field == 'filename') {
+                    $value = clean_param($value, PARAM_FILE);
+                    if ($value === '') {
+                        throw new file_exception('storedfileproblem', 'Invalid file name');
+                    }
+                }
+
+                if ($field === 'timecreated' or $field === 'timemodified') {
+                    if (!is_number($value)) {
+                        throw new file_exception('storedfileproblem', 'Invalid timestamp');
+                    }
+                    if ($value < 0) {
+                        $value = 0;
+                    }
+                }
+
+                if ($field == 'referencefileid' or $field == 'referencelastsync' or $field == 'referencelifetime') {
+                    $value = clean_param($value, PARAM_INT);
+                }
+
+                // adding the field
                 $this->file_record->$field = $value;
             } else {
                 throw new coding_exception("Invalid field name, $field doesn't exist in file record");
             }
         }
         $DB->update_record('files', $this->file_record);
+    }
+
+    /**
+     * Rename filename
+     *
+     * @param string $filepath file path
+     * @param string $filename file name
+     */
+    public function rename($filepath, $filename) {
+        $filerecord = new stdClass;
+        $filerecord->filepath = $filepath;
+        $filerecord->filename = $filename;
+        // populate the pathname hash
+        $filerecord->pathnamehash = $this->fs->get_pathname_hash($this->file_record->contextid, $this->file_record->component, $this->file_record->filearea, $this->file_record->itemid, $filepath, $filename);
+        $this->update($filerecord);
+    }
+
+    /**
+     * Replace the content by providing another stored_file instance
+     *
+     * @param stored_file $storedfile
+     */
+    public function replace_content_with(stored_file $storedfile) {
+        $contenthash = $storedfile->get_contenthash();
+        $this->set_contenthash($contenthash);
     }
 
     /**
@@ -111,6 +189,8 @@ class stored_file {
         $this->repository = null;
         unset($this->file_record->repositoryid);
         unset($this->file_record->reference);
+        unset($this->file_record->referencelastsync);
+        unset($this->file_record->referencelifetime);
 
         // Remove reference info from DB.
         $DB->delete_records('files_reference', array('id'=>$this->file_record->referencefileid));
@@ -139,6 +219,13 @@ class stored_file {
      */
     public function delete() {
         global $DB;
+        // If other files referring to this file, we need convert them
+        if ($files = $this->fs->get_references_by_storedfile($this)) {
+            foreach ($files as $file) {
+                $this->fs->import_external_file($file);
+            }
+        }
+        // Now delete file records in DB
         $DB->delete_records('files', array('id'=>$this->file_record->id));
         $DB->delete_records('files_reference', array('id'=>$this->file_record->referencefileid));
         // moves pool file to trash if content not needed any more
@@ -373,7 +460,12 @@ class stored_file {
             require_once($CFG->dirroot.'/repository/lib.php');
             if (repository::sync_external_file($this)) {
                 $prevcontent = $this->file_record->contenthash;
-                $this->file_record = $DB->get_record('files', array('id'=>$this->file_record->id), '*', MUST_EXIST);
+                $sql = "SELECT f.*, r.repositoryid, r.reference
+                          FROM {files} f
+                     LEFT JOIN {files_reference} r
+                               ON f.referencefileid = r.id
+                         WHERE f.id = ?";
+                $this->file_record = $DB->get_record_sql($sql, array($this->file_record->id), MUST_EXIST);
                 return ($prevcontent !== $this->file_record->contenthash);
             }
         }
@@ -484,6 +576,17 @@ class stored_file {
     }
 
     /**
+     * set timemodified
+     *
+     * @param int $timemodified
+     */
+    public function set_timemodified($timemodified) {
+        $filerecord = new stdClass;
+        $filerecord->timemodified = $timemodified;
+        $this->update($filerecord);
+    }
+
+    /**
      * Returns file status flag.
      *
      * @return int 0 means file OK, anything else is a problem and file can not be used
@@ -507,7 +610,24 @@ class stored_file {
      * @return string
      */
     public function get_contenthash() {
+        $this->sync_external_file();
         return $this->file_record->contenthash;
+    }
+
+    /**
+     * Set contenthash
+     *
+     * @param string $contenthash
+     */
+    protected function set_contenthash($contenthash) {
+        // make sure the content exists in moodle file pool
+        if ($this->fs->content_exists($contenthash)) {
+            $filerecord = new stdClass;
+            $filerecord->contenthash = $contenthash;
+            $this->update($filerecord);
+        } else {
+            throw new file_exception('storedfileproblem', 'Invalid contenthash, content must be already in filepool', $contenthash);
+        }
     }
 
     /**
@@ -529,12 +649,34 @@ class stored_file {
     }
 
     /**
+     * Set license
+     *
+     * @param string $license license
+     */
+    public function set_license($license) {
+        $filerecord = new stdClass;
+        $filerecord->license = $license;
+        $this->update($filerecord);
+    }
+
+    /**
      * Returns the author name of the file.
      *
      * @return string
      */
     public function get_author() {
         return $this->file_record->author;
+    }
+
+    /**
+     * Set author
+     *
+     * @param string $author
+     */
+    public function set_author($author) {
+        $filerecord = new stdClass;
+        $filerecord->author = $author;
+        $this->update($filerecord);
     }
 
     /**
@@ -547,12 +689,36 @@ class stored_file {
     }
 
     /**
+     * Set license
+     *
+     * @param string $license license
+     */
+    public function set_source($source) {
+        $filerecord = new stdClass;
+        $filerecord->source = $source;
+        $this->update($filerecord);
+    }
+
+
+    /**
      * Returns the sort order of file
      *
      * @return int
      */
     public function get_sortorder() {
         return $this->file_record->sortorder;
+    }
+
+    /**
+     * Set file sort order
+     *
+     * @param int $sortorder
+     * @return int
+     */
+    public function set_sortorder($sortorder) {
+        $filerecord = new stdClass;
+        $filerecord->sortorder = $sortorder;
+        $this->update($filerecord);
     }
 
     /**
@@ -598,6 +764,15 @@ class stored_file {
      */
     public function get_reference() {
         return $this->file_record->reference;
+    }
+
+    /**
+     * Get human readable file reference information
+     *
+     * @return string
+     */
+    public function get_reference_details() {
+        return $this->repository->get_reference_details($this->get_reference());
     }
 
     /**

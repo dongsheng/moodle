@@ -374,7 +374,25 @@ function file_prepare_draft_area(&$draftitemid, $contextid, $component, $fileare
                 if (!$options['subdirs'] and ($file->is_directory() or $file->get_filepath() !== '/')) {
                     continue;
                 }
-                $fs->create_file_from_storedfile($file_record, $file);
+                $draftfile = $fs->create_file_from_storedfile($file_record, $file);
+                // XXX: This is a hack for file manager
+                // File manager needs to know the original file information before copying
+                // to draft area, so we append these information in mdl_files.source field
+                // {@link file_storage::search_references()}
+                // {@link file_storage::search_references_count()}
+                $sourcefield = $file->get_source();
+                $newsourcefield = new stdClass;
+                $newsourcefield->source = $sourcefield;
+                $original = new stdClass;
+                $original->contextid = $contextid;
+                $original->component = $component;
+                $original->filearea  = $filearea;
+                $original->itemid    = $itemid;
+                $original->filename  = $file->get_filename();
+                $original->filepath  = $file->get_filepath();
+                $newsourcefield->original = file_storage::pack_reference($original);
+                $draftfile->set_source(serialize($newsourcefield));
+                // End of file manager hack
             }
         }
         if (!is_null($text)) {
@@ -632,6 +650,20 @@ function file_get_submitted_draft_itemid($elname) {
 }
 
 /**
+ * Restore the original source field from draft files
+ *
+ * @param stored_file $storedfile This only works with draft files
+ * @return stored_file
+ */
+function file_restore_source_field_from_draft_file($storedfile) {
+    $source = unserialize($storedfile->get_source());
+    if (!empty($source) && is_object($source)) {
+        $restoredsource = $source->source;
+        $storedfile->set_source($restoredsource);
+    }
+    return $storedfile;
+}
+/**
  * Saves files from a draft file area to a real one (merging the list of files).
  * Can rewrite URLs in some content at the same time if desired.
  *
@@ -702,6 +734,7 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
                     $file_record['reference'] = $file->get_reference();
                 }
             }
+            file_restore_source_field_from_draft_file($file);
 
             $fs->create_file_from_storedfile($file_record, $file);
         }
@@ -724,14 +757,40 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
                 $oldfile->delete();
                 continue;
             }
-            $newfile = $newhashes[$oldhash];
-            if ($oldfile->get_contenthash() != $newfile->get_contenthash() or $oldfile->get_sortorder() != $newfile->get_sortorder()
-                or $oldfile->get_status() != $newfile->get_status() or $oldfile->get_license() != $newfile->get_license()
-                or $oldfile->get_author() != $newfile->get_author() or $oldfile->get_source() != $newfile->get_source()) {
+
+            // status changed, we delete old file, and create a new one
+            if ($oldfile->get_status() != $newfile->get_status()) {
                 // file was changed, use updated with new timemodified data
                 $oldfile->delete();
+                // This file will be added later
                 continue;
             }
+
+            $newfile = $newhashes[$oldhash];
+            file_restore_source_field_from_draft_file($newfile);
+            // Replaced file content
+            if ($oldfile->get_contenthash() != $newfile->get_contenthash()) {
+                $oldfile->replace_content_with($newfile);
+            }
+            // Updated author
+            if ($oldfile->get_author() != $newfile->get_author()) {
+                $oldfile->set_author($newfile->get_author());
+            }
+            // Updated license
+            if ($oldfile->get_license() != $newfile->get_license()) {
+                $oldfile->set_license($newfile->get_license());
+            }
+
+            // Updated file source
+            if ($oldfile->get_source() != $newfile->get_source()) {
+                $oldfile->set_source($newfile->get_source());
+            }
+
+            // Updated sort order
+            if ($oldfile->get_sortorder() != $newfile->get_sortorder()) {
+                $oldfile->set_sortorder($newfile->get_sortorder());
+            }
+
             // unchanged file or directory - we keep it as is
             unset($newhashes[$oldhash]);
             if (!$oldfile->is_directory()) {
@@ -739,7 +798,7 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
             }
         }
 
-        // now add new/changed files
+        // Add fresh file or the file which has changed status
         // the size and subdirectory tests are extra safety only, the UI should prevent it
         foreach ($newhashes as $file) {
             if (!$options['subdirs']) {

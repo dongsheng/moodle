@@ -42,15 +42,6 @@ class repository_local extends repository {
     }
 
     /**
-     * Does this repository used to browse moodle files?
-     *
-     * @return boolean
-     */
-    public function has_moodle_files() {
-        return true;
-    }
-
-    /**
      * Get file listing
      *
      * @param string $encodedpath
@@ -124,95 +115,16 @@ class repository_local extends repository {
      * @return int
      */
     public function supported_returntypes() {
-        return FILE_INTERNAL | FILE_REFERENCE;
+        return FILE_INTERNAL;
     }
 
     /**
-     * Unpack file info and pack it, mainly for data validation
+     * Does this repository used to browse moodle files?
      *
-     * @param string $source
-     * @return string file referece
+     * @return boolean
      */
-    public function get_file_reference($source) {
-        $params = unserialize(base64_decode($source));
-        if (!is_array($params)) {
-            throw new repository_exception('invalidparams', 'repository');
-        }
-
-        $filename  = is_null($params['filename'])  ? null : clean_param($params['filename'], PARAM_FILE);
-        $filepath  = is_null($params['filepath'])  ? null : clean_param($params['filepath'], PARAM_PATH);;
-        $component = is_null($params['component']) ? null : clean_param($params['component'], PARAM_COMPONENT);
-        $filearea  = is_null($params['filearea'])  ? null : clean_param($params['filearea'], PARAM_AREA);
-        $itemid    = is_null($params['itemid'])    ? null : clean_param($params['itemid'], PARAM_INT);
-        $contextid = is_null($params['contextid']) ? null : clean_param($params['contextid'], PARAM_INT);
-
-        $storedfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
-
-        $reference = array();
-        $reference['contextid'] = $contextid;
-        $reference['component'] = $component;
-        $reference['filearea']  = $filearea;
-        $reference['itemid']    = $itemid;
-        $reference['filepath']  = $filepath;
-        $reference['filename']  = $filename;
-        $reference['userid']    = $storedfile->get_userid();
-
-        return base64_encode(serialize($reference));
-    }
-
-    /**
-     * Get file from external repository by reference
-     * {@link repository::get_file_reference()}
-     * {@link repository::get_file()}
-     *
-     * @param stdClass $reference file reference db record
-     * @return stdClass|null|false
-     */
-    public function get_file_by_reference($reference) {
-        $ref = $reference->reference;
-        $params = unserialize(base64_decode($ref));
-        if (!is_array($params)) {
-            throw new repository_exception('invalidparams', 'repository');
-        }
-        $filename  = is_null($params['filename'])  ? null : clean_param($params['filename'], PARAM_FILE);
-        $filepath  = is_null($params['filepath'])  ? null : clean_param($params['filepath'], PARAM_PATH);;
-        $component = is_null($params['component']) ? null : clean_param($params['component'], PARAM_COMPONENT);
-        $filearea  = is_null($params['filearea'])  ? null : clean_param($params['filearea'], PARAM_AREA);
-        $itemid    = is_null($params['itemid'])    ? null : clean_param($params['itemid'], PARAM_INT);
-        $contextid = is_null($params['contextid']) ? null : clean_param($params['contextid'], PARAM_INT);
-        $storedfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
-
-        $fileinfo = new stdClass;
-        $fileinfo->contenthash = $storedfile->get_contenthash();
-        $fileinfo->filesize    = $storedfile->get_filesize();
-        return $fileinfo;
-    }
-
-    /**
-     * Repository method to serve file
-     *
-     * @param stored_file $storedfile
-     * @param int $lifetime Number of seconds before the file should expire from caches (default 24 hours)
-     * @param int $filter 0 (default)=no filtering, 1=all files, 2=html files only
-     * @param bool $forcedownload If true (default false), forces download of file rather than view in browser/plugin
-     * @param array $options additional options affecting the file serving
-     */
-    public function send_file($storedfile, $lifetime=86400 , $filter=0, $forcedownload=false, array $options = null) {
-        $fs = get_file_storage();
-
-        $reference = $storedfile->get_reference();
-        $params = unserialize(base64_decode($reference));
-
-        $filename  = is_null($params['filename'])  ? null : clean_param($params['filename'], PARAM_FILE);
-        $filepath  = is_null($params['filepath'])  ? null : clean_param($params['filepath'], PARAM_PATH);;
-        $component = is_null($params['component']) ? null : clean_param($params['component'], PARAM_COMPONENT);
-        $filearea  = is_null($params['filearea'])  ? null : clean_param($params['filearea'], PARAM_AREA);
-        $itemid    = is_null($params['itemid'])    ? null : clean_param($params['itemid'], PARAM_INT);
-        $contextid = is_null($params['contextid']) ? null : clean_param($params['contextid'], PARAM_INT);
-
-        $srcfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
-
-        send_stored_file($srcfile, $lifetime, $filter, $forcedownload, $options);
+    public function has_moodle_files() {
+        return true;
     }
 }
 

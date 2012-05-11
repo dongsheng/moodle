@@ -235,7 +235,7 @@ class repository_filesystem extends repository {
         }
         $fileinfo = new stdClass;
         $fileinfo->filepath = $filepath;
-        return $filepath;
+        return $fileinfo;
     }
 
     /**

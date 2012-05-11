@@ -722,7 +722,7 @@ abstract class restore_dbops {
                     'author'      => $file->author,
                     'license'     => $file->license,
                     'sortorder'   => $file->sortorder);
-                if (!$isreference) {
+                if ($isreference) {
                     $fs->create_file_from_reference($file_record, $file->repositoryid, $file->reference);
                 } else {
                     $fs->create_file_from_pathname($file_record, $backuppath);
