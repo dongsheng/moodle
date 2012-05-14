@@ -1780,6 +1780,89 @@ abstract class repository {
     }
 
     /**
+     * Prepares list of files before passing it to AJAX, makes sure data is in the correct
+     * format and stores formatted values.
+     *
+     * @param array|stdClass $listing result of get_listing() or search() or file_get_drafarea_files()
+     * @return array
+     */
+    public static function prepare_listing($listing) {
+        global $OUTPUT;
+        if (is_array($listing) && isset($listing['list']) && is_array(($listing['list']))) {
+            $listing['list'] = array_values($listing['list']); // convert to array
+            $files = &$listing['list'];
+        } else if (is_object($listing) && isset($listing->list) && is_array(($listing->list))) {
+            $listing->list = array_values($listing->list); // convert to array
+            $files = &$listing->list;
+        } else {
+            return $listing;
+        }
+        $len = count($files);
+        for ($i=0; $i<$len; $i++) {
+            if (is_object($files[$i])) {
+                $file = (array)$files[$i];
+                $converttoobject = true;
+            } else {
+                $file = & $files[$i];
+                $converttoobject = false;
+            }
+            if (isset($file['size'])) {
+                $file['size'] = (int)$file['size'];
+                $file['size_f'] = display_size($file['size']);
+            }
+            if (isset($file['license']) &&
+                    get_string_manager()->string_exists($file['license'], 'license')) {
+                $file['license_f'] = get_string($file['license'], 'license');
+            }
+            if (isset($file['image_width']) && isset($file['image_height'])) {
+                $a = array('width' => $file['image_width'], 'height' => $file['image_height']);
+                $file['dimensions'] = get_string('imagesize', 'repository', (object)$a);
+            }
+            foreach (array('date', 'datemodified', 'datecreated') as $key) {
+                if (!isset($file[$key]) && isset($file['date'])) {
+                    $file[$key] = $file['date'];
+                }
+                if (isset($file[$key])) {
+                    // must be UNIX timestamp
+                    $file[$key] = (int)$file[$key];
+                    if (!$file[$key]) {
+                        unset($file[$key]);
+                    } else {
+                        $file[$key.'_f'] = userdate($file[$key], get_string('strftimedatetime', 'langconfig'));
+                        $file[$key.'_f_s'] = userdate($file[$key], get_string('strftimedatetimeshort', 'langconfig'));
+                    }
+                }
+            }
+            $isfolder = (array_key_exists('children', $file) || (isset($file['type']) && $file['type'] == 'folder'));
+            $filename = null;
+            if (isset($file['title'])) {
+                $filename = $file['title'];
+            }
+            else if (isset($file['fullname'])) {
+                $filename = $file['fullname'];
+            }
+            if (!isset($file['mimetype']) && !$isfolder && $filename) {
+                $mimetype = mimeinfo('type', $filename);
+                if (get_string_manager()->string_exists($mimetype, 'mimetypes')) {
+                    $mimetype = get_string($mimetype, 'mimetypes');
+                }
+                $file['mimetype'] = $mimetype;
+            }
+            if (!isset($file['icon'])) {
+                if ($isfolder) {
+                    $file['icon'] = $OUTPUT->pix_url('f/folder')->out(false);
+                } else if ($filename) {
+                    $file['icon'] = $OUTPUT->pix_url('f/'.mimeinfo('icon', $filename))->out(false);
+                }
+            }
+            if ($converttoobject) {
+                $files[$i] = (object)$file;
+            }
+        }
+        return $listing;
+    }
+
+    /**
      * Search files in repository.
      *
      * @param string $search_text search key word
@@ -1827,12 +1910,9 @@ abstract class repository {
      * @return string
      */
     public function print_search() {
-        $str = '';
-        $str .= '<input type="hidden" name="repo_id" value="'.$this->id.'" />';
-        $str .= '<input type="hidden" name="ctx_id" value="'.$this->context->id.'" />';
-        $str .= '<input type="hidden" name="seekey" value="'.sesskey().'" />';
-        $str .= '<label>'.get_string('keyword', 'repository').': </label><br/><input name="s" value="" /><br/>';
-        return $str;
+        global $PAGE;
+        $renderer = $PAGE->get_renderer('core', 'files');
+        return $renderer->repository_default_searchform();
     }
 
     /**
@@ -2350,6 +2430,7 @@ final class repository_type_form extends moodleform {
  */
 function initialise_filepicker($args) {
     global $CFG, $USER, $PAGE, $OUTPUT;
+    static $templatesinitialized;
     require_once($CFG->libdir . '/licenselib.php');
 
     $return = new stdClass();
@@ -2415,6 +2496,13 @@ function initialise_filepicker($args) {
         // Please note that the array keys for repositories are used within
         // JavaScript a lot, the key NEEDS to be the repository id.
         $return->repositories[$repository->id] = $meta;
+    }
+    if (!$templatesinitialized) {
+        // we need to send filepicker templates to the browser just once
+        $fprenderer = $PAGE->get_renderer('core', 'files');
+        $templates = $fprenderer->filepicker_js_templates();
+        $PAGE->requires->js_init_call('M.core_filepicker.set_templates', array($templates), true);
+        $templatesinitialized = true;
     }
     return $return;
 }

@@ -105,8 +105,8 @@ class repository_coursefiles extends repository {
                     $encodedpath = base64_encode(serialize($params));
                     $node = array(
                         'title' => $child->get_visible_name(),
-                        'size' => 0,
-                        'date' => '',
+                        'datemodified' => $child->get_timemodified(),
+                        'datecreated' => $child->get_timecreated(),
                         'path' => $encodedpath,
                         'children'=>array(),
                         'thumbnail' => $OUTPUT->pix_url('f/folder-32')->out(false)
@@ -116,11 +116,21 @@ class repository_coursefiles extends repository {
                     $encodedpath = base64_encode(serialize($child->get_params()));
                     $node = array(
                         'title' => $child->get_visible_name(),
-                        'size' => 0,
-                        'date' => '',
+                        'size' => $child->get_filesize(),
+                        'author' => $child->get_author(),
+                        'license' => $child->get_license(),
+                        'datemodified' => $child->get_timemodified(),
+                        'datecreated' => $child->get_timecreated(),
                         'source'=> $encodedpath,
                         'thumbnail' => $OUTPUT->pix_url(file_extension_icon($child->get_visible_name(), 32))->out(false)
                     );
+                    if ($imageinfo = $child->get_imageinfo()) {
+                        $fileurl = new moodle_url($child->get_url());
+                        $node['realthumbnail'] = $fileurl->out(false, array('preview' => 'thumb'));
+                        $node['realicon'] = $fileurl->out(false, array('preview' => 'tinyicon'));
+                        $node['image_width'] = $imageinfo['width'];
+                        $node['image_height'] = $imageinfo['height'];
+                    }
                     $list[] = $node;
                 }
             }

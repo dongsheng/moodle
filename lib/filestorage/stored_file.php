@@ -197,6 +197,25 @@ class stored_file {
     }
 
     /**
+     * Update some file record fields
+     *
+     * @param stdClass $dataobject
+     */
+    public function update($dataobject) {
+        // TODO MDL-28666 THIS FUNCTION IS COPIED FROM UNFINISHED CODE OF MDL-28666.
+        global $DB;
+        $keys = array_keys((array)$this->file_record);
+        foreach ($dataobject as $field => $value) {
+            if (in_array($field, $keys)) {
+                $this->file_record->$field = $value;
+            } else {
+                throw new coding_exception("Invalid field name, $field doesn't exist in file record");
+            }
+        }
+        $DB->update_record('files', $this->file_record);
+    }
+
+    /**
      * Is this a directory?
      *
      * Directories are only emulated, internally they are stored as empty
@@ -388,7 +407,14 @@ class stored_file {
      * @return mixed array with width, height and mimetype; false if not an image
      */
     public function get_imageinfo() {
-        if (!$imageinfo = getimagesize($this->get_content_file_location())) {
+        $path = $this->get_content_file_location();
+        if (!is_readable($path)) {
+            if (!$this->fs->try_content_recovery($this) or !is_readable($path)) {
+                throw new file_exception('storedfilecannotread', '', $path);
+            }
+        }
+        $mimetype = $this->get_mimetype();
+        if (!preg_match('|^image/|', $mimetype) || !filesize($path) || !($imageinfo = getimagesize($path))) {
             return false;
         }
         $image = array('width'=>$imageinfo[0], 'height'=>$imageinfo[1], 'mimetype'=>image_type_to_mime_type($imageinfo[2]));

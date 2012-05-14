@@ -29,6 +29,7 @@ define('AJAX_SCRIPT', true);
 require('../config.php');
 require_once($CFG->libdir.'/filelib.php');
 require_once($CFG->libdir.'/adminlib.php');
+require_once($CFG->dirroot.'/repository/lib.php');
 $PAGE->set_context(get_system_context());
 require_login();
 if (isguestuser()) {
@@ -58,10 +59,12 @@ switch ($action) {
     case 'list':
         $filepath = optional_param('filepath', '/', PARAM_PATH);
 
-        $data = file_get_drafarea_files($draftid, $filepath);
+        $data = repository::prepare_listing(file_get_drafarea_files($draftid, $filepath));
         $info = file_get_draft_area_info($draftid);
         $data->filecount = $info['filecount'];
         $data->filesize = $info['filesize'];
+        $data->tree = new stdClass();
+        file_get_drafarea_folders($draftid, '/', $data->tree);
         echo json_encode($data);
         die;
 
@@ -118,7 +121,54 @@ switch ($action) {
         echo json_encode($return);
         die;
 
+    case 'updatefile':
+        // Allows to Rename file, move it to another directory, change it's license and author information in one request
+        $filename    = required_param('filename', PARAM_FILE);
+        $filepath    = required_param('filepath', PARAM_PATH);
+
+        $fs = get_file_storage();
+        if (!($file = $fs->get_file($user_context->id, 'user', 'draft', $draftid, $filepath, $filename))) {
+            die(json_encode((object)array('error' => get_string('filenotfound', 'error'))));
+        }
+
+        $updatedata = array();
+        $updatedata['filename'] = $newfilename = optional_param('newfilename', $file->get_filename(), PARAM_FILE);
+        $updatedata['filepath'] = $newfilepath = optional_param('newfilepath', $file->get_filepath(), PARAM_PATH);
+        $updatedata['license'] = optional_param('newlicense', $file->get_license(), PARAM_TEXT);
+        $updatedata['author'] = optional_param('newauthor', $file->get_author(), PARAM_TEXT);
+        foreach ($updatedata as $key => $value) {
+            if (''.$value === ''.$file->{'get_'.$key}()) {
+                unset($updatedata[$key]);
+            }
+        }
+
+        if (!empty($updatedata)) {
+            $updatedata['timemodified'] = $file->get_timemodified();
+            $changes = array_diff(array_keys($updatedata), array('filepath'));
+            if (!empty($changes)) {
+                // any change except for the moving to another folder alters 'Date modified' of the file
+                $updatedata['timemodified'] = time();
+            }
+            if (array_key_exists('filename', $updatedata) || array_key_exists('filepath', $updatedata)) {
+                // check that target file name does not exist
+                if ($fs->file_exists($user_context->id, 'user', 'draft', $draftid, $newfilepath, $newfilename)) {
+                    die(json_encode((object)array('error' => get_string('fileexists', 'repository'))));
+                }
+                try {
+                    $newfile = $fs->create_file_from_storedfile($updatedata, $file);
+                } catch (Exception $e) {
+                    die(json_encode((object)array('error' => $e->getMessage())));
+                }
+                $file->delete();
+            } else {
+                $file->update((object)$updatedata);
+            }
+        }
+
+        die(json_encode((object)array('filepath' => $newfilepath)));
+
     case 'rename':
+        // TODO deprecate this, use 'updatefile' instead
         $filename    = required_param('filename', PARAM_FILE);
         $filepath    = required_param('filepath', PARAM_PATH);
         $newfilename = required_param('newfilename', PARAM_FILE);
@@ -138,8 +188,57 @@ switch ($action) {
         }
         die;
 
+    case 'updatedir':
+        $filepath = required_param('filepath', PARAM_PATH);
+        $fs = get_file_storage();
+        if (!$dir = $fs->get_file($user_context->id, 'user', 'draft', $draftid, $filepath, '.')) {
+            die(json_encode((object)array('error' => get_string('foldernotfound', 'repository'))));
+        }
+        $parts = explode('/', trim($dir->get_filepath(), '/'));
+        $dirname = end($parts);
+        $newdirname = required_param('newdirname', PARAM_FILE);
+        $parent = required_param('newfilepath', PARAM_PATH);
+        $newfilepath = clean_param($parent . '/' . $newdirname . '/', PARAM_PATH);
+        //we must update directory and all children too
+        if ($fs->get_directory_files($user_context->id, 'user', 'draft', $draftid, $newfilepath, true)) {
+            //bad luck, we can not rename if something already exists there
+            die(json_encode((object)array('error' => get_string('folderexists', 'repository'))));
+        }
+        $xfilepath = preg_quote($filepath, '|');
+        if ($newfilepath !== $filepath && preg_match("|^$xfilepath|", $parent)) {
+            // we can not move folder to it's own subfolder
+            die(json_encode((object)array('error' => get_string('folderrecurse', 'repository'))));
+        }
+
+        $files = $fs->get_area_files($user_context->id, 'user', 'draft', $draftid);
+        $moved = array();
+        foreach ($files as $file) {
+            if (!preg_match("|^$xfilepath|", $file->get_filepath())) {
+                continue;
+            }
+            // move one by one
+            $path = preg_replace("|^$xfilepath|", $newfilepath, $file->get_filepath());
+            $updatedata = array('filepath' => $path, 'timemodified' => $file->get_timemodified());
+            if ($dirname !== $newdirname && $file->get_filepath() === $filepath) {
+                // this is the main directory we move/rename AND it has actually been renamed
+                $updatedata['timemodified'] = time();
+            }
+            $fs->create_file_from_storedfile($updatedata, $file);
+            $moved[] = $file;
+        }
+        foreach ($moved as $file) {
+            // delete all old
+            $file->delete();
+        }
+
+        $return = new stdClass();
+        $return->filepath = $parent;
+        echo json_encode($return);
+        die;
+
     case 'renamedir':
     case 'movedir':
+        // TODO deprecate this, use 'renamemovedir' instead
 
         $filepath = required_param('filepath', PARAM_PATH);
         $fs = get_file_storage();
@@ -194,6 +293,7 @@ switch ($action) {
         die;
 
     case 'movefile':
+        // TODO deprecate this, use 'updatefile' instead
         $filename    = required_param('filename', PARAM_FILE);
         $filepath    = required_param('filepath', PARAM_PATH);
         $newfilepath = required_param('newfilepath', PARAM_PATH);
@@ -280,6 +380,20 @@ switch ($action) {
             echo json_encode($return);
         } else {
             echo json_encode(false);
+        }
+        die;
+
+    case 'getoriginal':
+        $filename    = required_param('filename', PARAM_FILE);
+        $filepath    = required_param('filepath', PARAM_PATH);
+
+        $fs = get_file_storage();
+        $file = $fs->get_file($user_context->id, 'user', 'draft', $draftid, $filepath, $filename);
+        if (!$file) {
+            echo json_encode(false);
+        } else {
+            $return = array('filename' => $filename, 'filepath' => $filepath, 'original' => $file->get_reference_details());
+            echo json_encode((object)$return);
         }
         die;
 

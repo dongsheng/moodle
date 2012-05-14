@@ -142,7 +142,7 @@ switch ($action) {
     case 'signin':
     case 'list':
         if ($repo->check_login()) {
-            $listing = $repo->get_listing($req_path, $page);
+            $listing = repository::prepare_listing($repo->get_listing($req_path, $page));
             $listing['repo_id'] = $repo_id;
             echo json_encode($listing);
             break;
@@ -160,11 +160,13 @@ switch ($action) {
         echo json_encode($logout);
         break;
     case 'searchform':
+        $search_form['repo_id'] = $repo_id;
         $search_form['form'] = $repo->print_search();
+        $search_form['allowcaching'] = true;
         echo json_encode($search_form);
         break;
     case 'search':
-        $search_result = $repo->search($search_text, (int)$page);
+        $search_result = repository::prepare_listing($repo->search($search_text, (int)$page));
         $search_result['repo_id'] = $repo_id;
         $search_result['issearchresult'] = true;
         echo json_encode($search_result);
