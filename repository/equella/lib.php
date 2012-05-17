@@ -18,7 +18,7 @@ require_once($CFG->dirroot . '/repository/lib.php');
 
 class repository_equella extends repository {
     /** @var array mimetype filter */
-    private $mimetypes;
+    private $mimetypes = array();
 
     /**
      * Constructor
@@ -30,11 +30,11 @@ class repository_equella extends repository {
     public function __construct($repositoryid, $context = SYSCONTEXTID, $options = array()) {
         parent::__construct($repositoryid, $context, $options);
 
-        if (!empty($this->options['mimetypes']) && !in_array('*', $this->options['mimetypes'])) {
-            $this->mimetypes = $this->options['mimetypes'];
-            $this->mimetypes = array_unique(array_map(array($this, 'toMimeType'), $this->options['mimetypes']));
-        } else {
-            $this->mimetypes = array();
+        if (isset($this->options['mimetypes'])) {
+            $mt = $this->options['mimetypes'];
+            if (!empty($mt) && !in_array('*', $mt)) {
+                $this->mimetypes = array_unique(array_map(array($this, 'toMimeType'), $mt));
+            }
         }
     }
 
@@ -55,7 +55,7 @@ class repository_equella extends repository {
             $mimetypesstr = '&mimeTypes=' . implode(',', $this->mimetypes);
             // We're restricting to a mime type, so we always restrict to selecting resources only.
             $restrict = '&attachmentonly=true';
-        } else if ($this->get_option('equella_select_restriction') != 'none') {
+        } elseif ($this->get_option('equella_select_restriction') != 'none') {
             // The option value matches the EQUELLA paramter name.
             $restrict = '&' . $this->get_option('equella_select_restriction') . '=true';
         }
@@ -77,6 +77,9 @@ class repository_equella extends repository {
         $list['object'] = array();
         $list['object']['type'] = 'text/html';
         $list['object']['src'] = $url;
+        $list['nologin']  = true;
+        $list['nosearch'] = true;
+        $list['norefresh'] = true;
         return $list;
     }
 
@@ -86,7 +89,7 @@ class repository_equella extends repository {
      * @return int
      */
     public function supported_returntypes() {
-        return FILE_EXTERNAL | FILE_REFERENCE;
+        return FILE_REFERENCE;
     }
 
     /**
