@@ -706,7 +706,7 @@ class backup_files_viewer implements renderable {
         $this->filecontext    = $options['filecontext'];
         $this->component      = $options['component'];
         $this->filearea       = $options['filearea'];
-        $files = $fs->get_area_files($this->filecontext->id, $this->component, $this->filearea, false, 'timecreated');
+        $files = $fs->get_area_files($this->filecontext->id, $this->component, $this->filearea, false, 'f.timecreated');
         $this->files = array_reverse($files);
     }
 }

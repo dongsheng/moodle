@@ -67,7 +67,7 @@ if ($resource->tobemigrated) {
 }
 
 $fs = get_file_storage();
-$files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false); // TODO: this is not very efficient!!
+$files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'f.sortorder DESC, f.id ASC', false); // TODO: this is not very efficient!!
 if (count($files) < 1) {
     resource_print_filenotfound($resource, $cm, $course);
     die;

@@ -1193,7 +1193,7 @@ class assign {
             $button->set_callback_options('assign_portfolio_caller', array('cmid' => $this->get_course_module()->id, 'sid' => $submissionid, 'plugin' => $plugintype, 'editor' => $editor, 'area'=>$filearea), '/mod/assign/portfolio_callback.php');
             $fs = get_file_storage();
 
-            if ($files = $fs->get_area_files($this->context->id, $component,$filearea, $submissionid, "timemodified", false)) {
+            if ($files = $fs->get_area_files($this->context->id, $component,$filearea, $submissionid, "f.timemodified", false)) {
                 $button->set_formats(PORTFOLIO_FORMAT_RICHHTML);
             } else {
                 $button->set_formats(PORTFOLIO_FORMAT_PLAINHTML);
@@ -2089,7 +2089,7 @@ class assign {
 
         $fs = get_file_storage();
         $browser = get_file_browser();
-        $files = $fs->get_area_files($this->get_context()->id, $component, $area , $submissionid , "timemodified", false);
+        $files = $fs->get_area_files($this->get_context()->id, $component, $area , $submissionid , "f.timemodified", false);
         return $this->output->assign_files($this->context, $submissionid, $area, $component);
 
     }
@@ -2893,7 +2893,7 @@ class assign {
 
         $fs = get_file_storage();
 
-        $oldfiles = $fs->get_area_files($oldcontextid, $oldcomponent, $oldfilearea, $olditemid, 'id', false);
+        $oldfiles = $fs->get_area_files($oldcontextid, $oldcomponent, $oldfilearea, $olditemid, 'f.id', false);
         foreach ($oldfiles as $oldfile) {
             $filerecord = new stdClass();
             $filerecord->contextid = $newcontextid;

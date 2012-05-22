@@ -44,7 +44,7 @@ class data_field_file extends data_field_base {
                 if (!empty($content->content)) {
                     if ($file = $fs->get_file($this->context->id, 'mod_data', 'content', $content->id, '/', $content->content)) {
                         $usercontext = get_context_instance(CONTEXT_USER, $USER->id);
-                        if (!$files = $fs->get_area_files($usercontext->id, 'user', 'draft', $itemid, 'id DESC', false)) {
+                        if (!$files = $fs->get_area_files($usercontext->id, 'user', 'draft', $itemid, 'f.id DESC', false)) {
                             return false;
                         }
                         if (empty($content->content1)) {
@@ -167,7 +167,7 @@ class data_field_file extends data_field_base {
         $fs->delete_area_files($this->context->id, 'mod_data', 'content', $content->id);
 
         $usercontext = get_context_instance(CONTEXT_USER, $USER->id);
-        $files = $fs->get_area_files($usercontext->id, 'user', 'draft', $value, 'timecreated DESC');
+        $files = $fs->get_area_files($usercontext->id, 'user', 'draft', $value, 'f.timecreated DESC');
 
         if (count($files)<2) {
             // no file

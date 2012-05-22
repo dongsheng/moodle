@@ -283,7 +283,7 @@ class file_info_stored extends file_info {
         $fs = get_file_storage();
 
         $storedfiles = $fs->get_directory_files($this->context->id, $this->lf->get_component(), $this->lf->get_filearea(), $this->lf->get_itemid(),
-                                                $this->lf->get_filepath(), false, true, "filepath, filename");
+                                                $this->lf->get_filepath(), false, true, "f.filepath, f.filename");
         foreach ($storedfiles as $file) {
             $result[] = new file_info_stored($this->browser, $this->context, $file, $this->urlbase, $this->topvisiblename,
                                              $this->itemidused, $this->readaccess, $this->writeaccess, false);
@@ -505,7 +505,7 @@ class file_info_stored extends file_info {
         if ($this->is_directory()) {
             $filepath = $this->lf->get_filepath();
             $fs = get_file_storage();
-            $storedfiles = $fs->get_area_files($this->context->id, $this->get_component(), $this->lf->get_filearea(), $this->lf->get_itemid(), "");
+            $storedfiles = $fs->get_area_files($this->context->id, $this->get_component(), $this->lf->get_filearea(), $this->lf->get_itemid());
             foreach ($storedfiles as $file) {
                 if (strpos($file->get_filepath(), $filepath) === 0) {
                     $file->delete();

@@ -2107,7 +2107,7 @@ class assignment_base {
         }
 
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false);
+        $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "f.timemodified", false);
         if (!empty($files)) {
             require_once($CFG->dirroot . '/mod/assignment/locallib.php');
             if ($CFG->enableportfolios) {
@@ -2153,7 +2153,7 @@ class assignment_base {
      */
     function count_user_files($itemid) {
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $itemid, "id", false);
+        $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $itemid, "f.id", false);
         return count($files);
     }
 
@@ -2216,7 +2216,7 @@ class assignment_base {
 
             $fs = get_file_storage();
 
-            if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false)) {
+            if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "f.timemodified", false)) {
                 $countfiles = count($files)." ".get_string("uploadedfiles", "assignment");
                 foreach ($files as $file) {
                     $countfiles .= "; ".$file->get_filename();

@@ -466,7 +466,7 @@ class file_info_area_course_legacy extends file_info_stored {
         $result = array();
         $fs = get_file_storage();
 
-        $storedfiles = $fs->get_directory_files($this->context->id, 'course', 'legacy', 0, $this->lf->get_filepath(), false, true, "filepath ASC, filename ASC");
+        $storedfiles = $fs->get_directory_files($this->context->id, 'course', 'legacy', 0, $this->lf->get_filepath(), false, true, "f.filepath ASC, f.filename ASC");
         foreach ($storedfiles as $file) {
             $result[] = new file_info_area_course_legacy($this->browser, $this->context, $file);
         }

@@ -106,7 +106,7 @@ foreach ($_FILES as $fieldname=>$uploaded_file) {
 $fs = get_file_storage();
 
 $usedspace = 0;
-$privatefiles = $fs->get_area_files($context->id, 'user', 'private', false, 'id', false);
+$privatefiles = $fs->get_area_files($context->id, 'user', 'private', false, 'f.id', false);
 foreach ($privatefiles as $file) {
     $usedspace += $file->get_filesize();
 }

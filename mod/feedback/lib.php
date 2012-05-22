@@ -1149,7 +1149,7 @@ function feedback_save_as_template($feedback, $name, $ispublic = 0) {
                                     'mod_feedback',
                                     'item',
                                     $item->id,
-                                    "id",
+                                    "f.id",
                                     false);
         if ($itemfiles) {
             foreach ($itemfiles as $ifile) {
@@ -1287,7 +1287,7 @@ function feedback_items_from_template($feedback, $templateid, $deleteold = false
                                         'mod_feedback',
                                         'template',
                                         $t_item->id,
-                                        "id",
+                                        "f.id",
                                         false);
         if ($templatefiles) {
             foreach ($templatefiles as $tfile) {
@@ -1540,7 +1540,7 @@ function feedback_delete_item($itemid, $renumber = true, $template = false) {
                                     'mod_feedback',
                                     'template',
                                     $item->id,
-                                    "id",
+                                    "f.id",
                                     false);
 
         if ($templatefiles) {
@@ -1556,7 +1556,7 @@ function feedback_delete_item($itemid, $renumber = true, $template = false) {
                                     'mod_feedback',
                                     'item',
                                     $item->id,
-                                    "id", false);
+                                    "f.id", false);
 
         if ($itemfiles) {
             $fs->delete_area_files($context->id, 'mod_feedback', 'item', $item->id);

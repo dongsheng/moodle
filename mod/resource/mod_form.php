@@ -215,7 +215,7 @@ class mod_resource_mod_form extends moodleform_mod {
 
         $usercontext = get_context_instance(CONTEXT_USER, $USER->id);
         $fs = get_file_storage();
-        if (!$files = $fs->get_area_files($usercontext->id, 'user', 'draft', $data['files'], 'sortorder, id', false)) {
+        if (!$files = $fs->get_area_files($usercontext->id, 'user', 'draft', $data['files'], 'f.sortorder, f.id', false)) {
             $errors['files'] = get_string('required');
             return $errors;
         }

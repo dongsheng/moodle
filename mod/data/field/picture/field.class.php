@@ -43,7 +43,7 @@ class data_field_picture extends data_field_base {
                 if (!empty($content->content)) {
                     if ($file = $fs->get_file($this->context->id, 'mod_data', 'content', $content->id, '/', $content->content)) {
                         $usercontext = get_context_instance(CONTEXT_USER, $USER->id);
-                        if (!$files = $fs->get_area_files($usercontext->id, 'user', 'draft', $itemid, 'id DESC', false)) {
+                        if (!$files = $fs->get_area_files($usercontext->id, 'user', 'draft', $itemid, 'f.id DESC', false)) {
                             return false;
                         }
                         if ($thumbfile = $fs->get_file($usercontext->id, 'user', 'draft', $itemid, '/', 'thumb_'.$content->content)) {

@@ -224,7 +224,7 @@ class question_attempt_step {
 
         $fs = get_file_storage();
         $this->files[$name] = $fs->get_area_files($contextid, 'question',
-                'response_' . $name, $this->id, 'sortorder', false);
+                'response_' . $name, $this->id, 'f.sortorder', false);
 
         return $this->files[$name];
     }

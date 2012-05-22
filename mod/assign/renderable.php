@@ -439,7 +439,7 @@ class assign_files implements renderable {
         $fs = get_file_storage();
         $this->dir = $fs->get_area_tree($this->context->id, $component, $filearea, $sid);
 
-        $files = $fs->get_area_files($this->context->id, $component, $filearea, $sid, "timemodified", false);
+        $files = $fs->get_area_files($this->context->id, $component, $filearea, $sid, "f.timemodified", false);
 
         if (!empty($CFG->enableportfolios)) {
             require_once($CFG->libdir . '/portfoliolib.php');

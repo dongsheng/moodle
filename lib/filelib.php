@@ -471,7 +471,7 @@ function file_get_draft_area_info($draftitemid) {
     $results = array();
 
     // The number of files
-    $draftfiles = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid, 'id', false);
+    $draftfiles = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid, 'f.id', false);
     $results['filecount'] = count($draftfiles);
     $results['filesize'] = 0;
     foreach ($draftfiles as $file) {
@@ -722,8 +722,8 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
         $options['maxbytes'] = 0; // unlimited
     }
 
-    $draftfiles = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid, 'id');
-    $oldfiles   = $fs->get_area_files($contextid, $component, $filearea, $itemid, 'id');
+    $draftfiles = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid, 'f.id');
+    $oldfiles   = $fs->get_area_files($contextid, $component, $filearea, $itemid, 'f.id');
 
     if (count($draftfiles) < 2) {
         // means there are no files - one file means root dir only ;-)

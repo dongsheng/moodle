@@ -368,7 +368,7 @@ class file_storage {
      * @param int $repositoryid
      * @param string $sort
      */
-    public function get_external_files($repositoryid, $sort = 'sortorder, itemid, filepath, filename') {
+    public function get_external_files($repositoryid, $sort = 'f.sortorder, f.itemid, f.filepath, f.filename') {
         global $DB;
         $sql = "SELECT f.*, r.repositoryid, r.reference
                   FROM {files} f
@@ -396,7 +396,7 @@ class file_storage {
      * @param bool $includedirs whether or not include directories
      * @return array of stored_files indexed by pathanmehash
      */
-    public function get_area_files($contextid, $component, $filearea, $itemid = false, $sort="sortorder, itemid, filepath, filename", $includedirs = true) {
+    public function get_area_files($contextid, $component, $filearea, $itemid = false, $sort="f.sortorder, f.itemid, f.filepath, f.filename", $includedirs = true) {
         global $DB;
 
         $conditions = array('contextid'=>$contextid, 'component'=>$component, 'filearea'=>$filearea);
@@ -407,6 +407,12 @@ class file_storage {
             $itemidsql = '';
         }
 
+
+        $sortpart = "";
+        if (!empty($sort)) {
+            $sortpart = "ORDER BY $sort";
+        }
+
         $sql = "SELECT f.*, r.repositoryid, r.reference
                   FROM {files} f
              LEFT JOIN {files_reference} r
@@ -414,8 +420,7 @@ class file_storage {
                  WHERE f.contextid = :contextid
                        AND f.component = :component
                        AND f.filearea = :filearea
-                       $itemidsql
-              ORDER BY $sort";
+                       $itemidsql $sortpart";
 
         $result = array();
         $filerecords = $DB->get_records_sql($sql, $conditions);
@@ -439,7 +444,7 @@ class file_storage {
      */
     public function get_area_tree($contextid, $component, $filearea, $itemid) {
         $result = array('dirname'=>'', 'dirfile'=>null, 'subdirs'=>array(), 'files'=>array());
-        $files = $this->get_area_files($contextid, $component, $filearea, $itemid, "sortorder, itemid, filepath, filename", true);
+        $files = $this->get_area_files($contextid, $component, $filearea, $itemid, "f.sortorder, f.itemid, f.filepath, f.filename", true);
         // first create directory structure
         foreach ($files as $hash=>$dir) {
             if (!$dir->is_directory()) {
@@ -492,7 +497,7 @@ class file_storage {
      * @param string $sort sort fields
      * @return array of stored_files indexed by pathanmehash
      */
-    public function get_directory_files($contextid, $component, $filearea, $itemid, $filepath, $recursive = false, $includedirs = true, $sort = "filepath, filename") {
+    public function get_directory_files($contextid, $component, $filearea, $itemid, $filepath, $recursive = false, $includedirs = true, $sort = "f.filepath, f.filename") {
         global $DB;
 
         if (!$directory = $this->get_file($contextid, $component, $filearea, $itemid, $filepath, '.')) {
@@ -648,7 +653,7 @@ class file_storage {
         // I needed it in the question code too.
         $count = 0;
 
-        $oldfiles = $this->get_area_files($oldcontextid, $component, $filearea, $itemid, 'id', false);
+        $oldfiles = $this->get_area_files($oldcontextid, $component, $filearea, $itemid, 'f.id', false);
         foreach ($oldfiles as $oldfile) {
             $filerecord = new stdClass();
             $filerecord->contextid = $newcontextid;

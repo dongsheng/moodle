@@ -113,7 +113,7 @@ class assignment_online extends assignment_base {
                         $button = new portfolio_add_button();
                         $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id), '/mod/assignment/locallib.php');
                         $fs = get_file_storage();
-                        if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', $this->filearea, $submission->id, "timemodified", false)) {
+                        if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', $this->filearea, $submission->id, "f.timemodified", false)) {
                             $button->set_formats(PORTFOLIO_FORMAT_RICHHTML);
                         } else {
                             $button->set_formats(PORTFOLIO_FORMAT_PLAINHTML);
@@ -292,7 +292,7 @@ class assignment_online extends assignment_base {
     function portfolio_load_data($caller) {
         $submission = $this->get_submission();
         $fs = get_file_storage();
-        if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', $this->filearea, $submission->id, "timemodified", false)) {
+        if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', $this->filearea, $submission->id, "f.timemodified", false)) {
             $caller->set('multifiles', $files);
         }
     }

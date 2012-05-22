@@ -104,7 +104,7 @@ class assign_feedback_file extends assign_feedback_plugin {
         global $USER;
 
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignfeedback_file', $area, $gradeid, "id", false);
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignfeedback_file', $area, $gradeid, "f.id", false);
 
         return count($files);
     }

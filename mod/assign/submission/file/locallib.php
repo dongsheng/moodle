@@ -163,7 +163,7 @@ class assign_submission_file extends assign_submission_plugin {
     private function count_files($submissionid, $area) {
 
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file', $area, $submissionid, "id", false);
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file', $area, $submissionid, "f.id", false);
 
         return count($files);
     }
@@ -189,7 +189,7 @@ class assign_submission_file extends assign_submission_plugin {
         //plagiarism code event trigger when files are uploaded
 
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file', ASSIGNSUBMISSION_FILE_FILEAREA, $submission->id, "id", false);
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file', ASSIGNSUBMISSION_FILE_FILEAREA, $submission->id, "f.id", false);
         $count = $this->count_files($submission->id, ASSIGNSUBMISSION_FILE_FILEAREA);
         // send files to event system
         // Let Moodle know that an assessable file was uploaded (eg for plagiarism detection)
@@ -229,7 +229,7 @@ class assign_submission_file extends assign_submission_plugin {
         $result = array();
         $fs = get_file_storage();
 
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file', ASSIGNSUBMISSION_FILE_FILEAREA, $submission->id, "timemodified", false);
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file', ASSIGNSUBMISSION_FILE_FILEAREA, $submission->id, "f.timemodified", false);
 
         foreach ($files as $file) {
             $result[$file->get_filename()] = $file;

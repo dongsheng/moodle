@@ -97,7 +97,7 @@ class assignment_files implements renderable {
         $this->dir = $fs->get_area_tree($this->context->id, 'mod_assignment', $filearea, $itemid);
         if (!empty($CFG->enableportfolios)) {
             require_once($CFG->libdir . '/portfoliolib.php');
-            $files = $fs->get_area_files($this->context->id, 'mod_assignment', $filearea, $itemid, "timemodified", false);
+            $files = $fs->get_area_files($this->context->id, 'mod_assignment', $filearea, $itemid, "f.timemodified", false);
             if (count($files) >= 1 && has_capability('mod/assignment:exportownsubmission', $this->context)) {
                 $button = new portfolio_add_button();
                 $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id, 'submissionid' => $itemid), '/mod/assignment/locallib.php');

@@ -231,7 +231,7 @@ class assign_submission_onlinetext extends assign_submission_plugin {
 
             $fs = get_file_storage();
 
-            $fsfiles = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_onlinetext', ASSIGNSUBMISSION_ONLINETEXT_FILEAREA, $submission->id, "timemodified", false);
+            $fsfiles = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_onlinetext', ASSIGNSUBMISSION_ONLINETEXT_FILEAREA, $submission->id, "f.timemodified", false);
 
             foreach ($fsfiles as $file) {
                 $files[$file->get_filename()] = $file;

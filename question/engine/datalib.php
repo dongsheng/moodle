@@ -1243,7 +1243,7 @@ class question_file_saver {
         $usercontext = get_context_instance(CONTEXT_USER, $USER->id);
 
         $files = $fs->get_area_files($usercontext->id, 'user', 'draft',
-                $draftitemid, 'sortorder, filepath, filename', false);
+                $draftitemid, 'f.sortorder, f.filepath, f.filename', false);
 
         $string = '';
         foreach ($files as $file) {

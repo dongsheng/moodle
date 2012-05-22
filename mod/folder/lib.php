@@ -338,7 +338,7 @@ function folder_export_contents($cm, $baseurl) {
     $folder = $DB->get_record('folder', array('id'=>$cm->instance), '*', MUST_EXIST);
 
     $fs = get_file_storage();
-    $files = $fs->get_area_files($context->id, 'mod_folder', 'content', 0, 'sortorder DESC, id ASC', false);
+    $files = $fs->get_area_files($context->id, 'mod_folder', 'content', 0, 'f.sortorder DESC, f.id ASC', false);
 
     foreach ($files as $fileinfo) {
         $file = array();

@@ -3903,7 +3903,7 @@ function forum_print_attachments($post, $cm, $type) {
         require_once($CFG->libdir.'/portfoliolib.php');
     }
 
-    $files = $fs->get_area_files($context->id, 'mod_forum', 'attachment', $post->id, "timemodified", false);
+    $files = $fs->get_area_files($context->id, 'mod_forum', 'attachment', $post->id, "f.timemodified", false);
     if ($files) {
         if ($canexport) {
             $button = new portfolio_add_button();

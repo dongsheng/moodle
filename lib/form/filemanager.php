@@ -335,7 +335,7 @@ class form_filemanager implements renderable {
 
         // calculate file count
         $usercontext = get_context_instance(CONTEXT_USER, $USER->id);
-        $files = $fs->get_area_files($usercontext->id, 'user', 'draft', $options->itemid, 'id', false);
+        $files = $fs->get_area_files($usercontext->id, 'user', 'draft', $options->itemid, 'f.id', false);
         $filecount = count($files);
         $this->options->filecount = $filecount;
 

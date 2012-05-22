@@ -253,7 +253,7 @@ function resource_get_coursemodule_info($coursemodule) {
         return $info;
     }
     $fs = get_file_storage();
-    $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false); // TODO: this is not very efficient!!
+    $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'f.sortorder DESC, f.id ASC', false); // TODO: this is not very efficient!!
     if (count($files) >= 1) {
         $mainfile = reset($files);
         $info->icon = file_file_icon($mainfile);
@@ -459,7 +459,7 @@ function resource_export_contents($cm, $baseurl) {
     $resource = $DB->get_record('resource', array('id'=>$cm->instance), '*', MUST_EXIST);
 
     $fs = get_file_storage();
-    $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false);
+    $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'f.sortorder DESC, f.id ASC', false);
 
     foreach ($files as $fileinfo) {
         $file = array();

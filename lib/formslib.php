@@ -378,7 +378,7 @@ abstract class moodleform {
                         $draftid = (int)$mform->getSubmitValue($elementname);
                         $fs = get_file_storage();
                         $context = get_context_instance(CONTEXT_USER, $USER->id);
-                        if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'id DESC', false)) {
+                        if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'f.id DESC', false)) {
                             $errors[$elementname] = $rule['message'];
                         }
                     }
@@ -653,7 +653,7 @@ abstract class moodleform {
             $draftid = $values[$elname];
             $fs = get_file_storage();
             $context = get_context_instance(CONTEXT_USER, $USER->id);
-            if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'id DESC', false)) {
+            if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'f.id DESC', false)) {
                 return false;
             }
             $file = reset($files);
@@ -701,7 +701,7 @@ abstract class moodleform {
             $draftid = $values[$elname];
             $fs = get_file_storage();
             $context = get_context_instance(CONTEXT_USER, $USER->id);
-            if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'id DESC', false)) {
+            if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'f.id DESC', false)) {
                 return false;
             }
             $file = reset($files);
@@ -764,7 +764,7 @@ abstract class moodleform {
             $draftid = $values[$elname];
             $fs = get_file_storage();
             $context = get_context_instance(CONTEXT_USER, $USER->id);
-            if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'id DESC', false)) {
+            if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'f.id DESC', false)) {
                 return null;
             }
             return $files;
@@ -808,7 +808,7 @@ abstract class moodleform {
             }
             $draftid = $values[$elname];
             $context = get_context_instance(CONTEXT_USER, $USER->id);
-            if (!$files = $fs->get_area_files($context->id, 'user' ,'draft', $draftid, 'id DESC', false)) {
+            if (!$files = $fs->get_area_files($context->id, 'user' ,'draft', $draftid, 'f.id DESC', false)) {
                 return false;
             }
             $file = reset($files);
@@ -870,7 +870,7 @@ abstract class moodleform {
             $draftid = $values[$elname];
             $fs = get_file_storage();
             $context = get_context_instance(CONTEXT_USER, $USER->id);
-            if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'id DESC', false)) {
+            if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'f.id DESC', false)) {
                 return false;
             }
             $file = reset($files);

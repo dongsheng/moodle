@@ -147,7 +147,7 @@ function imscp_update_instance($data, $mform) {
 
         // get a list of existing packages before adding new package
         if ($imscp->keepold > -1) {
-            $packages = $fs->get_area_files($context->id, 'mod_imscp', 'backup', false, "itemid ASC", false);
+            $packages = $fs->get_area_files($context->id, 'mod_imscp', 'backup', false, "f.itemid ASC", false);
         } else {
             $packages = array();
         }

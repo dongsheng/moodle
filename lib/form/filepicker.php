@@ -199,7 +199,7 @@ class MoodleQuickForm_filepicker extends HTML_QuickForm_input {
         if (!is_null($draftitemid)) {
             $fs = get_file_storage();
             $usercontext = get_context_instance(CONTEXT_USER, $USER->id);
-            if ($files = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid, 'id DESC', false)) {
+            if ($files = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid, 'f.id DESC', false)) {
                 $file = array_shift($files);
                 if ($this->_options['maxbytes'] and $file->get_filesize() > $this->_options['maxbytes']) {
                     // bad luck, somebody tries to sneak in oversized file

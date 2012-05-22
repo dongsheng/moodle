@@ -436,7 +436,7 @@ function page_export_contents($cm, $baseurl) {
 
     // page contents
     $fs = get_file_storage();
-    $files = $fs->get_area_files($context->id, 'mod_page', 'content', 0, 'sortorder DESC, id ASC', false);
+    $files = $fs->get_area_files($context->id, 'mod_page', 'content', 0, 'f.sortorder DESC, f.id ASC', false);
     foreach ($files as $fileinfo) {
         $file = array();
         $file['type']         = 'file';

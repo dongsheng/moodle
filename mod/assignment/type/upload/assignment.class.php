@@ -208,7 +208,7 @@ class assignment_upload extends assignment_base {
             $fs = get_file_storage();
             // edit files in another page
             if ($submission) {
-                if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false)) {
+                if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "f.timemodified", false)) {
                     $str = get_string('editthesefiles', 'assignment');
                 } else {
                     $str = get_string('uploadfiles', 'assignment');
@@ -1029,7 +1029,7 @@ class assignment_upload extends assignment_base {
     function count_responsefiles($userid) {
         if ($submission = $this->get_submission($userid)) {
             $fs = get_file_storage();
-            $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'response', $submission->id, "id", false);
+            $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'response', $submission->id, "f.id", false);
             return count($files);
         } else {
             return 0;
@@ -1113,7 +1113,7 @@ class assignment_upload extends assignment_base {
         // Check if the user has uploaded any files, if so we can add some more stuff to the settings nav
         if ($submission && is_enrolled($this->context, $USER, 'mod/assignment:submit') && $this->count_user_files($submission->id)) {
             $fs = get_file_storage();
-            if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false)) {
+            if ($files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "f.timemodified", false)) {
                 if (!$this->drafts_tracked() or !$this->isopen() or $this->is_finalized($submission)) {
                     $filenode = $node->add(get_string('submission', 'assignment'));
                 } else {
@@ -1162,7 +1162,7 @@ class assignment_upload extends assignment_base {
                 $a_assignid = $submission->assignment; //get name of this assignment for use in the file names.
                 $a_user = $DB->get_record("user", array("id"=>$a_userid),'id,username,firstname,lastname'); //get user firstname/lastname
 
-                $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false);
+                $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "f.timemodified", false);
                 foreach ($files as $file) {
                     //get files new name.
                     $fileext = strstr($file->get_filename(), '.');
