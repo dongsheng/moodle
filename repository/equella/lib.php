@@ -337,4 +337,34 @@ class repository_equella extends repository {
     private static function to_mime_type($value) {
         return mimeinfo('type', $value);
     }
+
+    /**
+     * Return the source information
+     *
+     * @param stdClass $url
+     * @return string|null
+     */
+    public function get_file_source_info($url) {
+        global $USER;
+        $url = $this->appendtoken($url);
+        $cookiename = uniqid('', true) . '.cookie';
+        $dir = make_temp_directory('repository/equella/' . $USER->id);
+        $cookiepathname = $dir . '/' . $cookiename;
+        $c = new curl(array('cookie'=>$cookiepathname));
+        $options = array();
+        $options['CURLOPT_FOLLOWLOCATION'] = true;
+        // Get redirect headers
+        $headers = $c->head($url, null, $options);
+        $location = "Location: ";
+        $pos = strpos($headers, $location);
+        $pos += strlen($location);
+        // Get redirect URL
+        $redirecturl = substr($headers, $pos, strpos($headers, "\r\n", $pos)-$pos);
+        $parts = explode('/', $redirecturl);
+        // Get file name
+        $filename = urldecode(array_pop($parts));
+        // Delete cookie jar.
+        unlink($cookiepathname);
+        return 'EQUELLA:' . $filename;
+    }
 }
