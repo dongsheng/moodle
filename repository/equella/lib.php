@@ -339,12 +339,12 @@ class repository_equella extends repository {
     }
 
     /**
-     * Return the source information
+     * Grab file name from url
      *
-     * @param stdClass $url
-     * @return string|null
+     * @param string $url
+     * @return string $filename
      */
-    public function get_file_source_info($url) {
+    private function grab_filename_from_url($url) {
         global $USER;
         $url = $this->appendtoken($url);
         $cookiename = uniqid('', true) . '.cookie';
@@ -365,6 +365,34 @@ class repository_equella extends repository {
         $filename = urldecode(array_pop($parts));
         // Delete cookie jar.
         unlink($cookiepathname);
-        return 'EQUELLA:' . $filename;
+	return $filename;
+    }
+
+    /**
+     * Return the source information
+     *
+     * @param stdClass $url
+     * @return string|null
+     */
+    public function get_file_source_info($url) {
+        return 'EQUELLA:' . $this->grab_filename_from_url($url);
+    }
+
+    /**
+     * Return human readable reference information
+     * {@link stored_file::get_reference()}
+     *
+     * @param string $reference
+     * @param int $filestatus status of the file, 0 - ok, 666 - source missing
+     * @return string
+     */
+    public function get_reference_details($reference, $filestatus = 0) {
+        $url = base64_decode($reference);
+        $details = $this->get_name() . ': ' . $this->grab_filename_from_url($url);
+        if (!$filestatus) {
+            return $details;
+        } else {
+            return get_string('lostsource', 'repository', $details);
+        }
     }
 }
