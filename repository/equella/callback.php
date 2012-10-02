@@ -35,6 +35,11 @@ if (isset($info->url)) {
     $url = s(clean_param($info->url, PARAM_URL));
 }
 
+$thumbnail = '';
+if (isset($info->thumbnail)) {
+    $thumbnail = s(clean_param($info->thumbnail, PARAM_URL));
+}
+
 $filename = '';
 if (isset($info->name)) {
     $filename  = s(clean_param($info->name, PARAM_FILE));
@@ -55,7 +60,7 @@ if (isset($info->license)) {
     $license = s(clean_param($info->license, PARAM_ALPHAEXT));
 }
 
-$source = base64_encode(serialize((object)array('url'=>$url,'filename'=>$filename)));
+$source = base64_encode(serialize((object)array('url'=>$url,'filename'=>$filename, 'thumbnail'=>$thumbnail)));
 
 $js =<<<EOD
 <html>

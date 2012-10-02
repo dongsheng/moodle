@@ -153,6 +153,10 @@ class file_storage {
         return $storedfile;
     }
 
+    private function get_preview_filename(stored_file $file) {
+        return sha1($file->get_contenthash() . $file->get_pathnamehash() . $file->get_reference());
+    }
+
     /**
      * Returns an image file that represent the given stored file as a preview
      *
@@ -165,10 +169,9 @@ class file_storage {
      * @return stored_file|bool false if unable to create the preview, stored file otherwise
      */
     public function get_file_preview(stored_file $file, $mode) {
-
         $context = context_system::instance();
         $path = '/' . trim($mode, '/') . '/';
-        $preview = $this->get_file($context->id, 'core', 'preview', 0, $path, $file->get_contenthash());
+        $preview = $this->get_file($context->id, 'core', 'preview', 0, $path, $this->get_preview_filename($file));
 
         if (!$preview) {
             $preview = $this->create_file_preview($file, $mode);
@@ -188,16 +191,31 @@ class file_storage {
      * @return stored_file|bool the newly created preview file or false
      */
     protected function create_file_preview(stored_file $file, $mode) {
+        global $CFG;
+
+        $data = null;
 
         $mimetype = $file->get_mimetype();
 
-        if ($mimetype === 'image/gif' or $mimetype === 'image/jpeg' or $mimetype === 'image/png') {
-            // make a preview of the image
-            $data = $this->create_imagefile_preview($file, $mode);
+        if ($file->is_external_file()) {
+            // Give repository plugin a change to generate preview
+            require_once("$CFG->dirroot/repository/lib.php");
+            $repositoryid = $file->get_repository_id();
+            $repository = repository::get_repository_by_id($repositoryid, SYSCONTEXTID);
+            if (method_exists($repository, 'create_preview')) {
+                $data = $repository->create_preview($file, $mode);
+            }
+        }
 
-        } else {
-            // unable to create the preview of this mimetype yet
-            return false;
+        if (empty($data)) {
+            if ($mimetype === 'image/gif' or $mimetype === 'image/jpeg' or $mimetype === 'image/png') {
+                // make a preview of the image
+                $data = $this->create_imagefile_preview($file, $mode);
+
+            } else {
+                // unable to create the preview of this mimetype yet
+                return false;
+            }
         }
 
         if (empty($data)) {
@@ -220,7 +238,7 @@ class file_storage {
             'filearea'  => 'preview',
             'itemid'    => 0,
             'filepath'  => '/' . trim($mode, '/') . '/',
-            'filename'  => $file->get_contenthash(),
+            'filename'  => $this->get_preview_filename($file),
         );
 
         if ($imageinfo) {

@@ -263,6 +263,26 @@ class repository_equella extends repository {
         }
     }
 
+    public function create_preview($stored_file, $mode) {
+        global $USER;
+        $reference = $stored_file->get_reference();
+        $ref = @unserialize(base64_decode($reference));
+        if (!empty($ref->thumbnail) && $url = $this->appendtoken($ref->thumbnail)) {
+            $filename = $stored_file->get_filename() . '_preview_' . $mode;
+            $path = $this->prepare_file($filename);
+            $cookiepathname = $this->prepare_file($USER->id. '_'. uniqid('', true). '.cookie');
+            $c = new curl(array('cookie'=>$cookiepathname));
+            $result = $c->download_one($url, null, array('filepath' => $path, 'followlocation' => true, 'timeout' => self::GETFILE_TIMEOUT));
+            // Delete cookie jar.
+            if (file_exists($cookiepathname)) {
+                unlink($cookiepathname);
+            }
+            return file_get_contents($path);
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Add Instance settings input to Moodle form
      *
