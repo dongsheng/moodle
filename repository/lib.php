@@ -2508,6 +2508,16 @@ abstract class repository {
         $sourcefield->source = $source;
         return serialize($sourcefield);
     }
+    /**
+     * Create preview image
+     *
+     * @param stored_file $file the file we want to preview
+     * @param string preview mode
+     * @return mixed
+     */
+    public function create_preview($stored_file, $mode) {
+        return null;
+    }
 }
 
 /**

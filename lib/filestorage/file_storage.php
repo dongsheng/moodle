@@ -153,8 +153,18 @@ class file_storage {
         return $storedfile;
     }
 
+    /**
+     * Generate preview image name
+     *
+     * @param stored_file $file the file we want to preview
+     * @return string
+     */
     private function get_preview_filename(stored_file $file) {
-        return sha1($file->get_contenthash() . $file->get_pathnamehash() . $file->get_reference());
+        if ($file->is_external_file() && $file->get_contenthash() == sha1(null)) {
+            return sha1($file->get_contenthash() . $file->get_reference());
+        } else {
+            return $file->get_contenthash();
+        }
     }
 
     /**
@@ -202,9 +212,7 @@ class file_storage {
             require_once("$CFG->dirroot/repository/lib.php");
             $repositoryid = $file->get_repository_id();
             $repository = repository::get_repository_by_id($repositoryid, SYSCONTEXTID);
-            if (method_exists($repository, 'create_preview')) {
-                $data = $repository->create_preview($file, $mode);
-            }
+            $data = $repository->create_preview($file, $mode);
         }
 
         if (empty($data)) {
