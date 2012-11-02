@@ -2508,12 +2508,15 @@ abstract class repository {
         $sourcefield->source = $source;
         return serialize($sourcefield);
     }
+
     /**
-     * Create preview image
+     * Create preview image, repository plugin could overwrite this method
+     * to generate preview image instead of using moodle default processor
      *
-     * @param stored_file $file the file we want to preview
-     * @param string preview mode
-     * @return mixed
+     * @see create_imagefile_preview
+     * @param stored_file $stored_file the file we want to preview
+     * @param string $mode preview mode, it can be 'tinyicon' or 'thumb'
+     * @return mixed returns binary data or null
      */
     public function create_preview($stored_file, $mode) {
         return null;

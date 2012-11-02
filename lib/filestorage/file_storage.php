@@ -160,8 +160,8 @@ class file_storage {
      * @return string
      */
     private function get_preview_filename(stored_file $file) {
-        if ($file->is_external_file() && $file->get_contenthash() == sha1(null)) {
-            return sha1($file->get_contenthash() . $file->get_reference());
+        if ($file->is_external_file() && $file->get_contenthash() === sha1(null)) {
+            return sha1($file->get_contenthash() . $file->get_reference() . $file->get_filesize() . $file->get_timemodified());
         } else {
             return $file->get_contenthash();
         }
@@ -207,7 +207,7 @@ class file_storage {
 
         $mimetype = $file->get_mimetype();
 
-        if ($file->is_external_file()) {
+        if ($file->is_external_file() && ($file->get_contenthash() === sha1(null))) {
             // Give repository plugin a change to generate preview
             require_once("$CFG->dirroot/repository/lib.php");
             $repositoryid = $file->get_repository_id();

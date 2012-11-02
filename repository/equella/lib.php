@@ -264,11 +264,12 @@ class repository_equella extends repository {
     }
 
     /**
-     * Create preview image
+     * Create preview image for equella item
      *
-     * @param stored_file $file the file we want to preview
-     * @param string preview mode
-     * @return mixed
+     * @see create_imagefile_preview
+     * @param stored_file $stored_file the file we want to preview
+     * @param string $mode preview mode, it can be 'tinyicon' or 'thumb'
+     * @return mixed returns binary data or null
      */
     public function create_preview($stored_file, $mode) {
         global $USER;

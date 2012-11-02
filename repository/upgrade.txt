@@ -18,3 +18,7 @@ http://docs.moodle.org/dev/Repository_API
 
 * The API was extended to allow repositories can now support external references, please
   see http://docs.moodle.org/dev/Repository_API for further details.
+
+=== 2.4 ===
+
+* Repository plugin is able to overwrite create_preview() method to generate preview image
