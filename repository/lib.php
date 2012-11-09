@@ -2513,13 +2513,14 @@ abstract class repository {
      * Create preview image, repository plugin could overwrite this method
      * to generate preview image instead of using moodle default processor
      *
-     * @see create_imagefile_preview
+     * @see file_storage::create_imagefile_preview()
+     * @see generate_image_thumbnail()
      * @param stored_file $stored_file the file we want to preview
      * @param string $mode preview mode, it can be 'tinyicon' or 'thumb'
-     * @return mixed returns binary data or null
+     * @return string|bool false if a problem occurs, the thumbnail image data otherwise
      */
     public function create_preview($stored_file, $mode) {
-        return null;
+        return false;
     }
 }
 

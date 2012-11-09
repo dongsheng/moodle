@@ -287,7 +287,7 @@ class repository_equella extends repository {
             }
             return file_get_contents($path);
         } else {
-            return null;
+            return false;
         }
     }
 
