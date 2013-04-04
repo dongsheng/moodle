@@ -548,7 +548,7 @@ class plugin_manager {
             ),
 
             'tinymce' => array(
-                'dragmath', 'moodleemoticon', 'moodleimage', 'moodlemedia', 'moodlenolink', 'spellchecker',
+                'dragmath', 'moodleemoticon', 'moodleimage', 'moodlemedia', 'moodlenolink', 'spellchecker', 'multilang',
             ),
 
             'theme' => array(

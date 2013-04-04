@@ -5,9 +5,39 @@ defined('MOODLE_INTERNAL') || die;
 require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->libdir.'/completionlib.php');
 
+function get_langstrings($text) {
+
+    $search = '/(<span(\s+lang="[a-zA-Z0-9_-]+"|\s+class="multilang"){2}\s*>.*?<\/span>)(\s*<span(\s+lang="[a-zA-Z0-9_-]+"|\s+class="multilang"){2}\s*>.*?<\/span>)+/is';
+    $matches = array();
+    $r = preg_match($search, $text, $matches);
+
+    $searchtosplit = '/<(?:lang|span)[^>]+lang="([a-zA-Z0-9_-]+)"[^>]*>(.*?)<\/(?:lang|span)>/is';
+
+    if (!preg_match_all($searchtosplit, $matches[0], $rawlanglist)) {
+    }
+
+    $multifullnames = array();
+    $index = 0;
+    for ($index; $index < sizeof($rawlanglist[1]); $index++) {
+        $multifullnames[$rawlanglist[1][$index]] = $rawlanglist[2][$index];
+    }
+    return $multifullnames;
+}
+
 class course_edit_form extends moodleform {
     protected $course;
     protected $context;
+    public function get_data() {
+        if (!$data = parent::get_data()) {
+            return false;
+        }
+
+        $fullname = "<span lang=\"en\" class=\"multilang\">$data->fullname_en</span><span lang=\"es\" class=\"multilang\">$data->fullname_es</span>";
+        $data->fullname = $fullname;
+        unset($data->fullname_en);
+        unset($data->fullname_es);
+        return $data;
+    }
 
     function definition() {
         global $USER, $CFG, $DB, $PAGE;
@@ -77,14 +107,28 @@ class course_edit_form extends moodleform {
                 $mform->setConstant('category', $course->category);
             }
         }
+        $multifullnames = get_langstrings($course->fullname);
 
-        $mform->addElement('text','fullname', get_string('fullnamecourse'),'maxlength="254" size="50"');
-        $mform->addHelpButton('fullname', 'fullnamecourse');
-        $mform->addRule('fullname', get_string('missingfullname'), 'required', null, 'client');
-        $mform->setType('fullname', PARAM_TEXT);
+        $course->fullname_en = $multifullnames['en'];
+        $course->fullname_es = $multifullnames['es'];
+
+
+        $mform->addElement('text','fullname_en', get_string('fullnamecourse_en'),'maxlength="254" size="50"');
+        $mform->addHelpButton('fullname_en', 'fullnamecourse');
+        $mform->addRule('fullname_en', get_string('missingfullname'), 'required', null, 'client');
+        $mform->setType('fullname_en', PARAM_TEXT);
         if (!empty($course->id) and !has_capability('moodle/course:changefullname', $coursecontext)) {
-            $mform->hardFreeze('fullname');
-            $mform->setConstant('fullname', $course->fullname);
+            $mform->hardFreeze('fullname_en');
+            $mform->setConstant('fullname_en', $multifullnames['en']);
+        }
+
+
+        $mform->addElement('text','fullname_es', get_string('fullnamecourse_es'),'maxlength="254" size="50"');
+        $mform->addRule('fullname_es', get_string('missingfullname'), 'required', null, 'client');
+        $mform->setType('fullname_es', PARAM_TEXT);
+        if (!empty($course->id) and !has_capability('moodle/course:changefullname', $coursecontext)) {
+            $mform->hardFreeze('fullname_es');
+            $mform->setConstant('fullname_es', $multifullnames['es']);
         }
 
         $mform->addElement('text', 'shortname', get_string('shortnamecourse'), 'maxlength="100" size="20"');
