@@ -148,6 +148,12 @@ function lti_view($instance) {
         }
     }
 
+    $parts = parse_url($endpoint);
+    $urlquery = null;
+    if (!empty($parts['query'])) {
+        parse_str($parts['query'], $urlquery);
+    }
+
     $orgid = $typeconfig['organizationid'];
 
     $course = $PAGE->course;
@@ -182,6 +188,12 @@ function lti_view($instance) {
     }
 
     $debuglaunch = ( $instance->debuglaunch == 1 );
+
+    if (is_array($urlquery)) {
+        foreach ($urlquery as $key=>$value) {
+            unset($parms[$key]);
+        }
+    }
 
     $content = lti_post_launch_html($parms, $endpoint, $debuglaunch);
 
