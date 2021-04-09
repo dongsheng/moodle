@@ -64,7 +64,6 @@ lib/validateurlsyntax.php
 lib/amd/src/popper.js
 lib/geopattern-php/
 lib/php-jwt/
-lib/babel-polyfill/
 lib/polyfills/
 lib/emoji-data/
 lib/plist/
