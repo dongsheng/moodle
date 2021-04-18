@@ -148,7 +148,7 @@ define([
             }
         });
 
-        rootElement.parent().append(ul);
+        rootElement.append(ul);
         var id = rootElement.attr('id') + '_group';
         ul.attr('id', id);
         rootElement.attr('aria-owns', id);
@@ -167,8 +167,8 @@ define([
                 item.attr('aria-expanded', true);
                 Aria.unhide(group);
             } else {
-                if (element.parent().hasClass('contains_branch')) {
-                    element.parent().removeClass('contains_branch');
+                if (element.hasClass('contains_branch')) {
+                    element.removeClass('contains_branch');
                     element.addClass('emptybranch');
                 }
             }
