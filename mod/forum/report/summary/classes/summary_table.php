@@ -402,12 +402,18 @@ class summary_table extends table_sql {
         // Fetch the data.
         $sql = $this->get_full_sql();
 
+        $records = [];
         // Only paginate when not downloading.
         if (!$this->is_downloading()) {
-            $this->rawdata = $DB->get_records_sql($sql, $this->sql->params, $this->get_page_start(), $this->get_page_size());
+            $records = $DB->get_records_sql($sql, $this->sql->params, $this->get_page_start(), $this->get_page_size());
         } else {
-            $this->rawdata = $DB->get_records_sql($sql, $this->sql->params);
+            $records = $DB->get_records_sql($sql, $this->sql->params);
         }
+
+        foreach ($records as $row) {
+            $this->rawdata[$row->userid] = $row;
+        }
+
     }
 
     /**
@@ -547,7 +553,7 @@ class summary_table extends table_sql {
         $userfieldssql = \user_picture::fields('u', $userfields);
 
         // Define base SQL query format.
-        $this->sql->basefields = ' ue.userid AS userid,
+        $this->sql->basefields = ' ue.id as enrolmentid, ue.userid AS userid,
                                    e.courseid AS courseid,
                                    SUM(CASE WHEN p.parent = 0 THEN 1 ELSE 0 END) AS postcount,
                                    SUM(CASE WHEN p.parent != 0 THEN 1 ELSE 0 END) AS replycount,
@@ -587,7 +593,7 @@ class summary_table extends table_sql {
 
         $this->sql->basewhere = 'e.courseid = :courseid';
 
-        $this->sql->basegroupby = 'ue.userid, e.courseid, u.id, ' . $userfieldssql;
+        $this->sql->basegroupby = 'ue.id, ue.userid, e.courseid, u.id, ' . $userfieldssql;
 
         if ($this->logreader) {
             $this->fill_log_summary_temp_table();
