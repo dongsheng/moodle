@@ -403,6 +403,12 @@ export const init = participantsRegionId => {
         Object.values(activeFilters).forEach(filter => {
             filters[filter.filterValue.name] = filter.filterValue;
         });
+            console.info("update table from filter $$$$$$$$$$$$$" );
+        // Unlock clear filter button when activeFilters is > 1
+        if (Object.values(filters)) {
+            const clearButton = getFilterRegion().querySelector(Selectors.filter.fields.type);
+            console.info("$$$$$$$$$$$$$", clearButton);
+        }
 
         return DynamicTable.setFilters(
             DynamicTable.getTableFromId(filterSet.dataset.tableRegion),
@@ -481,6 +487,7 @@ export const init = participantsRegionId => {
     CustomEvents.define(filterRegion, [CustomEvents.events.accessibleChange]);
     filterRegion.on(CustomEvents.events.accessibleChange, e => {
         const typeField = e.target.closest(Selectors.filter.fields.type);
+        console.info(`click choose filter type select option ${typeField.value}`);
         if (typeField && typeField.value) {
             const filter = e.target.closest(Selectors.filter.region);
 
