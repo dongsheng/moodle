@@ -78,6 +78,7 @@ function atto_media_strings_for_js() {
                                           'videoheight',
                                           'videosourcelabel',
                                           'videowidth',
+                                          'mediaurlrequired',
                                           'width'),
                                           'atto_media');
 }
